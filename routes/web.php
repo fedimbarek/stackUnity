@@ -5,7 +5,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    //return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
@@ -24,6 +25,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     })->name('dashboard');
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    //Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::put('/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('users.updateRole');
 });
 
 require __DIR__.'/auth.php';
