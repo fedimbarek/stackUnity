@@ -24,7 +24,12 @@
             </a>
         </li>
     @endrole
-
+<li class="nav-item {{ request()->routeIs('outages.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('outages.index') }}">
+        <i class="fas fa-fw fa-bolt"></i>
+        <span>Coupures</span>
+    </a>
+</li>
     <hr class="sidebar-divider d-none d-md-block">
 
     <div class="text-center d-none d-md-inline">

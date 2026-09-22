@@ -20,4 +20,9 @@ class Neighborhood extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function powerOutages()
+{
+    return $this->hasMany(PowerOutage::class);
+}
 }
