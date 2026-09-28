@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EquipementC\Equipementc;
+
 
 Route::get('/', function () {
     //return view('welcome');
@@ -27,6 +29,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     //Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::put('/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('users.updateRole');
+    Route::get('/equipements', [Equipementc::class, 'index'])->name('equipements.index');
+
 });
 
 require __DIR__.'/auth.php';
