@@ -28,6 +28,17 @@
     <hr class="sidebar-divider d-none d-md-block">
 
     <div class="text-center d-none d-md-inline">
+            @role('admin')
+       
+        
+
+        <li class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.users.index') }}">
+                <i class="fas fa-fw fa-users"></i>
+                <span>Equipements</span>
+            </a>
+        </li>
+    @endrole
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
     </div>
 </ul>
