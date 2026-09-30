@@ -1,7 +1,11 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
-        <div class="sidebar-brand-icon rotate-n-15"><i class="fas fa-temperature-high"></i></div>
-        <div class="sidebar-brand-text mx-3">HeatAlert</div>
+        <div class="sidebar-brand-icon rotate-n-15">
+            <!-- <i class="fas fa-temperature-high"></i> -->
+        </div>
+        <div class="sidebar-brand-text mx-3">
+                          <img src="img/logo4.png" height="80">
+</div>
     </a>
 
     <hr class="sidebar-divider my-0">
