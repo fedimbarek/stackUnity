@@ -5,6 +5,7 @@ use App\Http\Controllers\FrontOfficeController;
 use App\Http\Controllers\OutageController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NeighborhoodController;
 
 // ===== FrontOffice (public, sans authentification) =====
 Route::get('/', [FrontOfficeController::class, 'home'])->name('front.home');
@@ -59,6 +60,10 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::put('/outages/{outage}/confirm', [OutageController::class, 'confirm']);
         Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve']);
     });
+});
+
+Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+    Route::resource('neighborhoods', NeighborhoodController::class);
 });
 
 require __DIR__.'/auth.php';
