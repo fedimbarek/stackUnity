@@ -24,7 +24,7 @@ class Equipementc extends Controller
 }
     public function create(): View
     {
-        return view('equipements.create');
+        return view('Equipement.CreateEquipement');
     }
 
     public function store(EquipementRequest $request): RedirectResponse
@@ -40,7 +40,7 @@ class Equipementc extends Controller
         $this->service->create($data);
 
         return redirect()
-            ->route('admin.equipements.index')
+            ->route('equipements.index')
             ->with('success', 'Équipement ajouté avec succès.');
     }
 
@@ -51,22 +51,23 @@ class Equipementc extends Controller
 
     public function edit(Equipement $equipement): View
     {
-        return view('equipements.edit', compact('equipement'));
+        return view('Equipement.EditEquipement', compact('equipement'));
     }
 
     public function update(EquipementRequest $request, Equipement $equipement): RedirectResponse
     {
         $data = $request->validated();
 
+        $previousImage = $equipement->image;
         if ($request->hasFile('image')) {
-            if ($equipement->image) {
-                Storage::disk('public')->delete($equipement->image);
-            }
-
             $data['image'] = $request->file('image')->store('equipements', 'public');
         }
 
         $this->service->update($equipement, $data);
+
+        if ($request->hasFile('image') && $previousImage) {
+            Storage::disk('public')->delete($previousImage);
+        }
 
         return redirect()
             ->route('admin.equipements.index')
@@ -75,11 +76,12 @@ class Equipementc extends Controller
 
     public function destroy(Equipement $equipement): RedirectResponse
     {
-        if ($equipement->image) {
-            Storage::disk('public')->delete($equipement->image);
-        }
+        $image = $equipement->image;
+        $deleted = $this->service->delete($equipement);
 
-        $this->service->delete($equipement);
+        if ($deleted && $image) {
+            Storage::disk('public')->delete($image);
+        }
 
         return redirect()
             ->route('admin.equipements.index')

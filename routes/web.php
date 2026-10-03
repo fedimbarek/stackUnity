@@ -30,6 +30,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     //Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::put('/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('users.updateRole');
     Route::get('/equipements', [Equipementc::class, 'index'])->name('equipements.index');
+    Route::get('/equipements/create', [Equipementc::class, 'create'])->name('equipements.create');
+    Route::post('/equipements', [Equipementc::class, 'store'])->name('equipements.store');
+    Route::get('/equipements/{equipement}/edit', [Equipementc::class, 'edit'])->name('equipements.edit');
+    Route::put('/equipements/{equipement}', [Equipementc::class, 'update'])->name('equipements.update');
+    Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])->name('equipements.destroy');
 
 });
 

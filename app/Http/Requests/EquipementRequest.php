@@ -12,7 +12,7 @@ class EquipementRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,11 @@ class EquipementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nom' => ['required', 'string', 'max:255'],
+            'type_equipement' => ['required', 'string', 'max:255'],
+            'date_ajout' => ['required', 'date'],
+            'image' => ['nullable', 'image', 'max:2048'],
+            'prix_louer' => ['required', 'numeric', 'min:0'],
         ];
     }
 }
