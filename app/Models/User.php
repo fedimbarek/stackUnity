@@ -41,4 +41,16 @@ class User extends Authenticatable
     // {
     //     return $this->hasMany(Equipment::class);
     // }
+
+    //dhia
+    public function notificationPreference()
+{
+    return $this->hasOne(NotificationPreference::class);
+}
+
+/** Préférences de l'utilisateur, ou valeurs par défaut s'il n'a rien enregistré. */
+public function preferences(): NotificationPreference
+{
+    return $this->notificationPreference ?? new NotificationPreference();
+}
 }

@@ -25,4 +25,14 @@ class Neighborhood extends Model
 {
     return $this->hasMany(PowerOutage::class);
 }
+
+public function weatherForecasts()
+{
+    return $this->hasMany(WeatherForecast::class);
+}
+
+public function weatherAlerts()
+{
+    return $this->hasMany(WeatherAlert::class);
+}
 }
