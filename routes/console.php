@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 
 Schedule::command('app:close-stale-outages')->everyThirtyMinutes();
+Schedule::command('weather:fetch')->hourly();
