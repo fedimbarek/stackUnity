@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             NeighborhoodSeeder::class,
             UserSeeder::class,
+            DemoDataSeeder::class,
         ]);
     }
 }

@@ -40,7 +40,7 @@ class Equipementc extends Controller
         $this->service->create($data);
 
         return redirect()
-            ->route('equipements.index')
+            ->route('admin.equipements.index')
             ->with('success', 'Équipement ajouté avec succès.');
     }
 
