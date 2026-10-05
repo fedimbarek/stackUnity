@@ -27,6 +27,72 @@
                 <span>Utilisateurs</span>
             </a>
         </li>
+
+        <li class="nav-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.notifications.broadcast.create') }}">
+                <i class="fas fa-fw fa-paper-plane"></i>
+                <span>Notification à un quartier</span>
+            </a>
+        </li>
+    @endrole
+
+    <hr class="sidebar-divider">
+    <div class="sidebar-heading">Réseau électrique</div>
+
+    <li class="nav-item {{ request()->routeIs('outages.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('outages.index') }}">
+            <i class="fas fa-fw fa-bolt"></i>
+            <span>Coupures</span>
+        </a>
+    </li>
+
+    <li class="nav-item {{ request()->routeIs('neighborhoods.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('neighborhoods.index') }}">
+            <i class="fas fa-fw fa-map-marker-alt"></i>
+            <span>Quartiers</span>
+        </a>
+    </li>
+
+    <hr class="sidebar-divider">
+    <div class="sidebar-heading">Météo</div>
+
+    <li class="nav-item {{ request()->routeIs('weather.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('weather.index') }}">
+            <i class="fas fa-fw fa-cloud-sun"></i>
+            <span>Prévisions canicule</span>
+        </a>
+    </li>
+
+    @role('admin|gestionnaire')
+        <li class="nav-item {{ request()->routeIs('admin.weather.forecasts.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.weather.forecasts.index') }}">
+                <i class="fas fa-fw fa-temperature-high"></i>
+                <span>Gérer les prévisions</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('admin.weather.risks.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.weather.risks.index') }}">
+                <i class="fas fa-fw fa-plug"></i>
+                <span>Risques de coupure</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('admin.weather.alerts.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.weather.alerts.index') }}">
+                <i class="fas fa-fw fa-bell"></i>
+                <span>Alertes météo</span>
+            </a>
+        </li>
+    @endrole
+
+    @role('admin')
+        <li class="nav-item {{ request()->routeIs('admin.weather.thresholds.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.weather.thresholds.edit') }}">
+                <i class="fas fa-fw fa-sliders-h"></i>
+                <span>Seuils d'alerte</span>
+            </a>
+        </li>
     @endrole
 <li class="nav-item {{ request()->routeIs('outages.*') ? 'active' : '' }}">
     <a class="nav-link" href="{{ route('outages.index') }}">

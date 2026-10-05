@@ -4,6 +4,21 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\FrontOfficeController;
 use App\Http\Controllers\OutageController;
 use App\Http\Controllers\ProfileController;
+
+use App\Http\Controllers\Admin\OutageRiskController;
+use App\Http\Controllers\Admin\WeatherForecastController;
+use App\Http\Controllers\WeatherController;
+use App\Http\Controllers\Admin\AlertThresholdController;
+use App\Http\Controllers\Admin\WeatherAlertController;
+use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\Admin\BroadcastController;
+use App\Http\Controllers\NotificationPreferenceController;
+
+use App\Http\Controllers\Api\AlertApiController;
+use App\Http\Controllers\Api\NotificationApiController;
+use App\Http\Controllers\Api\WeatherApiController;
+use App\Http\Middleware\ForceJsonResponse;
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NeighborhoodController;
 use App\Http\Controllers\EquipementC\Equipementc;
