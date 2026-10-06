@@ -56,38 +56,46 @@
                             Ajouté le {{ \Illuminate\Support\Carbon::parse($equipement->date_ajout)->format('d/m/Y') }}
                         </small>
                     </div>
-                    <details class="card-body pt-0" @if ($errors->any()) open @endif>
-                        <summary class="btn btn-primary">Réserver</summary>
-                        <form action="{{ route('front.equipements.reservations.store', $equipement) }}" method="POST" class="mt-3">
-                            @csrf
+                    @if ($equipement->etat === 'reserve')
+                        <div class="card-body pt-0">
+                            <button type="button" class="btn btn-secondary" disabled aria-disabled="true">
+                                Déjà réservé
+                            </button>
+                        </div>
+                    @else
+                        <details class="card-body pt-0" @if ($errors->any()) open @endif>
+                            <summary class="btn btn-primary">Réserver</summary>
+                            <form action="{{ route('front.equipements.reservations.store', $equipement) }}" method="POST" class="mt-3">
+                                @csrf
 
-                            <div class="mb-2">
-                                <label for="nom-{{ $equipement->id }}" class="form-label">Nom</label>
-                                <input id="nom-{{ $equipement->id }}" name="nom" type="text" class="form-control" value="{{ old('nom') }}" maxlength="255" required>
-                            </div>
-                            <div class="mb-2">
-                                <label for="prenom-{{ $equipement->id }}" class="form-label">Prénom</label>
-                                <input id="prenom-{{ $equipement->id }}" name="prenom" type="text" class="form-control" value="{{ old('prenom') }}" maxlength="255" required>
-                            </div>
-                            <div class="mb-2">
-                                <label for="email-{{ $equipement->id }}" class="form-label">E-mail</label>
-                                <input id="email-{{ $equipement->id }}" name="email" type="email" class="form-control" value="{{ old('email') }}" maxlength="255" required>
-                            </div>
-                            <div class="mb-2">
-                                <label for="numero-{{ $equipement->id }}" class="form-label">Numéro de téléphone</label>
-                                <input id="numero-{{ $equipement->id }}" name="numero" type="tel" class="form-control" value="{{ old('numero') }}" maxlength="30" required>
-                            </div>
-                            <div class="mb-2">
-                                <label for="date-debut-{{ $equipement->id }}" class="form-label">Date de début</label>
-                                <input id="date-debut-{{ $equipement->id }}" name="date_debut" type="date" class="form-control" value="{{ old('date_debut') }}" min="{{ now()->toDateString() }}" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="date-fin-{{ $equipement->id }}" class="form-label">Date de fin</label>
-                                <input id="date-fin-{{ $equipement->id }}" name="date_fin" type="date" class="form-control" value="{{ old('date_fin') }}" min="{{ old('date_debut', now()->toDateString()) }}" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Envoyer la demande</button>
-                        </form>
-                    </details>
+                                <div class="mb-2">
+                                    <label for="nom-{{ $equipement->id }}" class="form-label">Nom</label>
+                                    <input id="nom-{{ $equipement->id }}" name="nom" type="text" class="form-control" value="{{ old('nom') }}" maxlength="255" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="prenom-{{ $equipement->id }}" class="form-label">Prénom</label>
+                                    <input id="prenom-{{ $equipement->id }}" name="prenom" type="text" class="form-control" value="{{ old('prenom') }}" maxlength="255" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="email-{{ $equipement->id }}" class="form-label">E-mail</label>
+                                    <input id="email-{{ $equipement->id }}" name="email" type="email" class="form-control" value="{{ old('email') }}" maxlength="255" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="numero-{{ $equipement->id }}" class="form-label">Numéro de téléphone</label>
+                                    <input id="numero-{{ $equipement->id }}" name="numero" type="tel" class="form-control" value="{{ old('numero') }}" maxlength="30" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="date-debut-{{ $equipement->id }}" class="form-label">Date de début</label>
+                                    <input id="date-debut-{{ $equipement->id }}" name="date_debut" type="date" class="form-control" value="{{ old('date_debut') }}" min="{{ now()->toDateString() }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="date-fin-{{ $equipement->id }}" class="form-label">Date de fin</label>
+                                    <input id="date-fin-{{ $equipement->id }}" name="date_fin" type="date" class="form-control" value="{{ old('date_fin') }}" min="{{ old('date_debut', now()->toDateString()) }}" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Envoyer la demande</button>
+                            </form>
+                        </details>
+                    @endif
                 </article>
             </div>
 

@@ -90,6 +90,10 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
         Route::post('/equipements', [Equipementc::class, 'store'])->name('equipements.store');
         Route::get('/equipements/{equipement}/reservations', [Equipementc::class, 'reservations'])
             ->name('equipements.reservations.index');
+        Route::post('/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
+            ->name('equipements.reservations.confirm');
+        Route::delete('/equipements/{equipement}/reservations/{reservation}', [ReservationController::class, 'destroy'])
+            ->name('equipements.reservations.destroy');
         Route::get('/equipements/{equipement}/edit', [Equipementc::class, 'edit'])->name('equipements.edit');
         Route::put('/equipements/{equipement}', [Equipementc::class, 'update'])->name('equipements.update');
         Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])->name('equipements.destroy');

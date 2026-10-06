@@ -21,6 +21,7 @@ class Reservation extends Model
         return [
             'date_debut' => 'date',
             'date_fin' => 'date',
+            'confirmee_at' => 'datetime',
         ];
     }
 

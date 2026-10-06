@@ -16,6 +16,7 @@ class Equipement extends Model
         'date_ajout',
         'image',
         'prix_louer',
+        'etat',
     ];
 
     public function reservations(): HasMany
