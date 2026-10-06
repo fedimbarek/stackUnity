@@ -9,6 +9,7 @@ use App\Http\Controllers\OutageController;
 use App\Http\Controllers\OutageUpdateController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\CoolingPointController;
 
 use App\Http\Controllers\Admin\OutageRiskController;
 use App\Http\Controllers\Admin\WeatherForecastController;
@@ -25,9 +26,11 @@ use App\Http\Controllers\Api\WeatherApiController;
 use App\Http\Middleware\ForceJsonResponse;
 
 use App\Http\Controllers\EquipementC\Equipementc;
+
 use App\Http\Controllers\Admin\ContactCategoryController;
 use App\Http\Controllers\Admin\EmergencyContactController as AdminContactController;
 use App\Http\Controllers\EmergencyContactController;
+
 use Illuminate\Support\Facades\Route;
 
 
@@ -152,6 +155,16 @@ Route::middleware('auth')->prefix('api')->group(function () {
 
         Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve']);
     });
+});
+
+
+// ===== Points de fraîcheur (Cooling Points) =====
+Route::middleware(['auth'])->group(function () {
+    Route::get('/cooling-points', [CoolingPointController::class, 'index'])
+        ->name('cooling-points.index');
+
+    Route::post('/cooling-points/fetch', [CoolingPointController::class, 'fetch'])
+        ->name('cooling-points.fetch');
 });
 
 
@@ -286,6 +299,9 @@ Route::middleware([ForceJsonResponse::class, 'auth'])
                 ->name('notifications.broadcast');
         });
     });
+
+
+// ===== Contacts d'urgence (public) =====
 Route::get('/contacts', [EmergencyContactController::class, 'index'])->name('contacts.index');
 Route::get('/contacts/{contact}', [EmergencyContactController::class, 'show'])
     ->whereNumber('contact')
@@ -300,7 +316,6 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         Route::resource('contacts', AdminContactController::class)->except('show');
         Route::resource('contact-categories', ContactCategoryController::class)->except('show');
     });
-
 
 
 require __DIR__.'/auth.php';

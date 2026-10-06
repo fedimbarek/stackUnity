@@ -32,6 +32,23 @@
                 <span>Utilisateurs</span>
             </a>
         </li>
+<<<<<<< HEAD
+    @endrole
+<li class="nav-item {{ request()->routeIs('outages.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('outages.index') }}">
+        <i class="fas fa-fw fa-bolt"></i>
+        <span>Coupures</span>
+    </a>
+</li>
+    @hasanyrole('admin|gestionnaire|resident')
+    <li class="nav-item {{ request()->routeIs('cooling-points.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('cooling-points.index') }}">
+            <i class="fas fa-fw fa-snowflake"></i>
+            <span>Points de Fraîcheur</span>
+        </a>
+    </li>
+    @endhasanyrole
+=======
 
         <li class="nav-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.notifications.broadcast.create') }}">
@@ -130,6 +147,7 @@
             <span>Équipements</span>
         </a>
     </li>
+>>>>>>> origin/main
 
      @role('admin|gestionnaire')
         <li class="nav-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
@@ -154,4 +172,9 @@
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
     </div>
 
+<<<<<<< HEAD
+
 </ul>
+=======
+</ul>
+>>>>>>> origin/main
