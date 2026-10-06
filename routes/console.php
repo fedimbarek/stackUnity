@@ -11,13 +11,10 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-<<<<<<< HEAD
-Schedule::command('app:close-stale-outages')->everyThirtyMinutes();
-=======
 // Fermeture automatique des coupures obsolètes
 Schedule::command('app:close-stale-outages')->everyThirtyMinutes();
 
 
 // Rapport hebdomadaire
 // Schedule::job(new WeeklyReportJob)->weeklyOn(1, '06:00'); // chaque lundi à 6h
->>>>>>> origin/main
+//test

@@ -32,23 +32,6 @@
                 <span>Utilisateurs</span>
             </a>
         </li>
-<<<<<<< HEAD
-    @endrole
-<li class="nav-item {{ request()->routeIs('outages.*') ? 'active' : '' }}">
-    <a class="nav-link" href="{{ route('outages.index') }}">
-        <i class="fas fa-fw fa-bolt"></i>
-        <span>Coupures</span>
-    </a>
-</li>
-    @hasanyrole('admin|gestionnaire|resident')
-    <li class="nav-item {{ request()->routeIs('cooling-points.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('cooling-points.index') }}">
-            <i class="fas fa-fw fa-snowflake"></i>
-            <span>Points de Fraîcheur</span>
-        </a>
-    </li>
-    @endhasanyrole
-=======
 
         <li class="nav-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.notifications.broadcast.create') }}">
@@ -69,14 +52,24 @@
             <span>Coupures</span>
         </a>
     </li>
-@role('admin|gestionnaire')
-    <li class="nav-item {{ request()->routeIs('neighborhoods.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('neighborhoods.index') }}">
-            <i class="fas fa-fw fa-map-marker-alt"></i>
-            <span>Quartiers</span>
-        </a>
-    </li>
+
+    @role('admin|gestionnaire')
+        <li class="nav-item {{ request()->routeIs('neighborhoods.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('neighborhoods.index') }}">
+                <i class="fas fa-fw fa-map-marker-alt"></i>
+                <span>Quartiers</span>
+            </a>
+        </li>
     @endrole
+
+    @hasanyrole('admin|gestionnaire|resident')
+        <li class="nav-item {{ request()->routeIs('cooling-points.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('cooling-points.index') }}">
+                <i class="fas fa-fw fa-snowflake"></i>
+                <span>Points de Fraîcheur</span>
+            </a>
+        </li>
+    @endhasanyrole
 
 
     <!-- Météo -->
@@ -147,9 +140,10 @@
             <span>Équipements</span>
         </a>
     </li>
->>>>>>> origin/main
 
-     @role('admin|gestionnaire')
+
+    <!-- Contacts d'urgence -->
+    @role('admin|gestionnaire')
         <li class="nav-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.contacts.index') }}">
                 <i class="fas fa-fw fa-phone-alt"></i>
@@ -172,9 +166,4 @@
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
     </div>
 
-<<<<<<< HEAD
-
 </ul>
-=======
-</ul>
->>>>>>> origin/main
