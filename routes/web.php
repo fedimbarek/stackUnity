@@ -8,6 +8,10 @@ use App\Http\Controllers\NeighborhoodController;
 use App\Http\Controllers\OutageController;
 use App\Http\Controllers\OutageUpdateController;
 use App\Http\Controllers\ProfileController;
+<<<<<<< HEAD
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CoolingPointController;
+=======
 use App\Http\Controllers\ReportController;
 
 use App\Http\Controllers\Admin\OutageRiskController;
@@ -25,6 +29,7 @@ use App\Http\Controllers\Api\WeatherApiController;
 use App\Http\Middleware\ForceJsonResponse;
 
 use App\Http\Controllers\EquipementC\Equipementc;
+>>>>>>> origin/main
 
 use Illuminate\Support\Facades\Route;
 
@@ -152,6 +157,17 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
 });
 
+<<<<<<< HEAD
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/cooling-points', [CoolingPointController::class, 'index'])
+        ->name('cooling-points.index');
+
+    Route::post('/cooling-points/fetch', [CoolingPointController::class, 'fetch'])
+        ->name('cooling-points.fetch');
+});
+require __DIR__.'/auth.php';
+=======
 
 // ===== Équipements (admin/gestionnaire) =====
 Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
@@ -180,3 +196,4 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
 
 require __DIR__.'/auth.php';
+>>>>>>> origin/main
