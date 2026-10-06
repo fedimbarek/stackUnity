@@ -27,6 +27,9 @@ use App\Http\Middleware\ForceJsonResponse;
 
 use App\Http\Controllers\EquipementC\Equipementc;
 
+use App\Http\Controllers\Admin\CoolingPointTypeController;
+use App\Http\Controllers\Admin\CoolingPointController as AdminCoolingPointController;
+
 use App\Http\Controllers\Admin\ContactCategoryController;
 use App\Http\Controllers\Admin\EmergencyContactController as AdminContactController;
 use App\Http\Controllers\EmergencyContactController;
@@ -135,6 +138,8 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/audit-logs', [AuditLogController::class, 'index'])
             ->name('audit-logs.index');
+        Route::resource('cooling-point-types', CoolingPointTypeController::class);
+        Route::resource('cooling-points', AdminCoolingPointController::class);
     });
 
 

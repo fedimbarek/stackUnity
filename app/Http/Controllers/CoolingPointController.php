@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Services\CoolingPointService;
 use App\Models\CoolingPoint;
 use Illuminate\Http\Request;
-
+use App\Http\Controllers\Admin\CoolingPointTypeController;
+use App\Http\Controllers\Admin\CoolingPointController as AdminCoolingPointController;
 class CoolingPointController extends Controller
 {
     public function index()
