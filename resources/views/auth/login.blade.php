@@ -142,10 +142,6 @@
     <!-- <div class="auth-logo-shape"></div> -->
     <img src="img/logo4.png" height="120">
 
-    <h3>HEATALERT</h3>
-    <h1>Content de te revoir !</h1>
-
->>>>>>> origin/main
                 <h3>HEATALERT</h3>
                 <h1>Content de te revoir !</h1>
                 <p>Reste informé des alertes canicule, des coupures de courant dans ton quartier et des points de fraîcheur les plus proches.</p>

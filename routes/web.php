@@ -25,7 +25,9 @@ use App\Http\Controllers\Api\WeatherApiController;
 use App\Http\Middleware\ForceJsonResponse;
 
 use App\Http\Controllers\EquipementC\Equipementc;
-
+use App\Http\Controllers\Admin\ContactCategoryController;
+use App\Http\Controllers\Admin\EmergencyContactController as AdminContactController;
+use App\Http\Controllers\EmergencyContactController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -177,6 +179,128 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
             ->name('equipements.destroy');
     });
 });
+
+Route::middleware('auth')->group(function () {
+    Route::get('/weather', [WeatherController::class, 'index'])->name('weather.index');
+    Route::post('/weather/advice', [WeatherController::class, 'advice'])->name('weather.advice');
+
+    Route::middleware('role:admin|gestionnaire')->group(function () {
+        Route::post('/weather/refresh', [WeatherController::class, 'refresh'])->name('weather.refresh');
+    });
+});
+
+
+// ===== Module météo (back office) =====
+Route::middleware(['auth', 'role:admin|gestionnaire'])
+    ->prefix('admin/weather')
+    ->name('admin.weather.')
+    ->group(function () {
+
+        Route::resource('forecasts', WeatherForecastController::class)->except('show');
+        Route::resource('risks', OutageRiskController::class)->except('show');
+
+        Route::get('alerts', [WeatherAlertController::class, 'index'])->name('alerts.index');
+
+        Route::middleware('role:admin')->group(function () {
+            Route::get('alerts/create', [WeatherAlertController::class, 'create'])->name('alerts.create');
+            Route::post('alerts', [WeatherAlertController::class, 'store'])->name('alerts.store');
+            Route::delete('alerts/{alert}', [WeatherAlertController::class, 'destroy'])->name('alerts.destroy');
+
+            Route::get('thresholds', [AlertThresholdController::class, 'edit'])->name('thresholds.edit');
+            Route::put('thresholds', [AlertThresholdController::class, 'update'])->name('thresholds.update');
+        });
+    });
+
+
+// ===== Historique des notifications =====
+Route::middleware('auth')->group(function () {
+    Route::get('/notifications', [UserNotificationController::class, 'index'])
+        ->name('notifications.index');
+
+    Route::put('/notifications/read-all', [UserNotificationController::class, 'readAll'])
+        ->name('notifications.readAll');
+
+    Route::put('/notifications/{id}/read', [UserNotificationController::class, 'read'])
+        ->name('notifications.read');
+});
+
+
+// ===== Préférences de notification =====
+Route::middleware('auth')->group(function () {
+    Route::get('/notifications/preferences', [NotificationPreferenceController::class, 'edit'])
+        ->name('notifications.preferences.edit');
+
+    Route::put('/notifications/preferences', [NotificationPreferenceController::class, 'update'])
+        ->name('notifications.preferences.update');
+});
+
+
+// ===== Notification manuelle ciblée =====
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin/notifications')
+    ->name('admin.notifications.')
+    ->group(function () {
+        Route::get('broadcast', [BroadcastController::class, 'create'])
+            ->name('broadcast.create');
+
+        Route::post('broadcast', [BroadcastController::class, 'store'])
+            ->name('broadcast.store');
+    });
+
+
+// ===== API JSON : météo, alertes, notifications =====
+Route::middleware([ForceJsonResponse::class, 'auth'])
+    ->prefix('api')
+    ->name('api.')
+    ->group(function () {
+
+        Route::get('/weather/current', [WeatherApiController::class, 'current'])
+            ->name('weather.current');
+
+        Route::get('/weather/forecast', [WeatherApiController::class, 'forecast'])
+            ->name('weather.forecast');
+
+        Route::get('/alerts', [AlertApiController::class, 'index'])
+            ->name('alerts.index');
+
+        Route::get('/notifications', [NotificationApiController::class, 'index'])
+            ->name('notifications.index');
+
+        Route::get('/notifications/preferences', [NotificationApiController::class, 'preferences'])
+            ->name('notifications.preferences');
+
+        Route::put('/notifications/preferences', [NotificationApiController::class, 'updatePreferences'])
+            ->name('notifications.preferences.update');
+
+        Route::put('/notifications/{id}/read', [NotificationApiController::class, 'read'])
+            ->name('notifications.read');
+
+        Route::middleware('role:admin')->group(function () {
+            Route::post('/alerts', [AlertApiController::class, 'store'])
+                ->name('alerts.store');
+
+            Route::put('/alerts/thresholds', [AlertApiController::class, 'thresholds'])
+                ->name('alerts.thresholds');
+
+            Route::post('/notifications/broadcast', [NotificationApiController::class, 'broadcast'])
+                ->name('notifications.broadcast');
+        });
+    });
+Route::get('/contacts', [EmergencyContactController::class, 'index'])->name('contacts.index');
+Route::get('/contacts/{contact}', [EmergencyContactController::class, 'show'])
+    ->whereNumber('contact')
+    ->name('contacts.show');
+
+
+// ---------- BackOffice contacts d'urgence ----------
+Route::middleware(['auth', 'role:admin|gestionnaire'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::resource('contacts', AdminContactController::class)->except('show');
+        Route::resource('contact-categories', ContactCategoryController::class)->except('show');
+    });
+
 
 
 require __DIR__.'/auth.php';

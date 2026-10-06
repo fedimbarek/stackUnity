@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             NeighborhoodSeeder::class,
             UserSeeder::class,
             DemoDataSeeder::class,
+             ContactCategorySeeder::class,
+             EmergencyContactSeeder::class,
+
         ]);
         Report::factory(6)->create();
     }
