@@ -40,6 +40,12 @@
                 <span>Quartiers</span>
             </a>
         </li>
+           <li class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('reports.index') }}">
+                <i class="fas fa-fw fa-file-excel"></i>
+                <span>Rapports</span>
+            </a>
+        </li>     
     <hr class="sidebar-divider d-none d-md-block">
 
     <div class="text-center d-none d-md-inline">

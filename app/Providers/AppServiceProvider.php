@@ -4,6 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use App\Models\Neighborhood;
+use App\Models\Report;
+use App\Models\User;
+use App\Observers\AuditObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,5 +26,8 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         Paginator::useBootstrapFour();
+         User::observe(AuditObserver::class);
+        Neighborhood::observe(AuditObserver::class);
+        Report::observe(AuditObserver::class);
     }
 }

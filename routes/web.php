@@ -1,18 +1,22 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\FrontOfficeController;
-use App\Http\Controllers\OutageController;
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NeighborhoodController;
+use App\Http\Controllers\OutageController;
+use App\Http\Controllers\OutageUpdateController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
+use Illuminate\Support\Facades\Route;
 
 // ===== FrontOffice (public, sans authentification) =====
 Route::get('/', [FrontOfficeController::class, 'home'])->name('front.home');
 Route::get('/carte', [FrontOfficeController::class, 'map'])->name('front.map');
 Route::get('/carte/data', [OutageController::class, 'map'])->name('front.map.data');
 
-// ===== Dashboard =====
+// ===== Dashboard résident =====
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -24,21 +28,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// ===== Admin =====
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('dashboard');
-
-    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
-    Route::put('/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('users.updateRole');
-});
-
 // ===== Coupures (BackOffice, connecté) =====
 Route::middleware('auth')->group(function () {
     Route::get('/outages', [OutageController::class, 'index'])->name('outages.index');
     Route::post('/outages', [OutageController::class, 'store'])->name('outages.store');
-    Route::get('/outages/map', [OutageController::class, 'map'])->name('outages.map'); // AVANT {outage} !
+    Route::get('/outages/map', [OutageController::class, 'map'])->name('outages.map');
     Route::get('/outages/{outage}', [OutageController::class, 'show'])->name('outages.show');
 
     Route::middleware('role:admin|gestionnaire')->group(function () {
@@ -47,7 +41,31 @@ Route::middleware('auth')->group(function () {
         Route::delete('/outages/{outage}', [OutageController::class, 'destroy'])->name('outages.destroy');
         Route::put('/outages/{outage}/confirm', [OutageController::class, 'confirm'])->name('outages.confirm');
         Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve'])->name('outages.resolve');
+
+        // Route::post('/outages/{outage}/updates', [OutageUpdateController::class, 'store'])->name('outages.updates.store');
+        // Route::put('/outages/{outage}/updates/{update}', [OutageUpdateController::class, 'update'])->name('outages.updates.update');
+        // Route::delete('/outages/{outage}/updates/{update}', [OutageUpdateController::class, 'destroy'])->name('outages.updates.destroy');
     });
+});
+
+// ===== Quartiers (admin/gestionnaire) =====
+Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+    Route::resource('neighborhoods', NeighborhoodController::class);
+});
+
+// ===== Rapports (admin/gestionnaire) =====
+Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+    Route::resource('reports', ReportController::class);
+    Route::get('/reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
+    Route::post('/reports/{report}/send', [ReportController::class, 'send'])->name('reports.send');
+});
+
+// ===== Admin (dashboard KPI, utilisateurs, audit) =====
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::put('/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('users.updateRole');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 });
 
 // ===== API (pour la future appli mobile) =====
@@ -60,10 +78,6 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::put('/outages/{outage}/confirm', [OutageController::class, 'confirm']);
         Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve']);
     });
-});
-
-Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
-    Route::resource('neighborhoods', NeighborhoodController::class);
 });
 
 require __DIR__.'/auth.php';
