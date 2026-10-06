@@ -16,6 +16,13 @@ class OutageRiskController extends Controller
         return view('admin.weather.risks.index', compact('risks'));
     }
 
+    public function show(OutageRisk $risk)
+    {
+        $risk->load('forecast.neighborhood');
+
+        return view('admin.weather.risks.show', compact('risk'));
+    }
+
     public function create()
     {
         return view('admin.weather.risks.create', [
@@ -28,8 +35,7 @@ class OutageRiskController extends Controller
     {
         OutageRisk::create($request->validated());
 
-        return redirect()->route('admin.weather.risks.index')
-            ->with('status', 'Risque ajouté.');
+        return redirect()->route('admin.weather.risks.index')->with('status', 'Risque ajouté.');
     }
 
     public function edit(OutageRisk $risk)
@@ -44,15 +50,13 @@ class OutageRiskController extends Controller
     {
         $risk->update($request->validated());
 
-        return redirect()->route('admin.weather.risks.index')
-            ->with('status', 'Risque modifié.');
+        return redirect()->route('admin.weather.risks.show', $risk)->with('status', 'Risque modifié.');
     }
 
     public function destroy(OutageRisk $risk)
     {
         $risk->delete();
 
-        return redirect()->route('admin.weather.risks.index')
-            ->with('status', 'Risque supprimé.');
+        return redirect()->route('admin.weather.risks.index')->with('status', 'Risque supprimé.');
     }
 }

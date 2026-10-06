@@ -108,25 +108,28 @@ Route::middleware('auth')->group(function () {
 });
 
 
-// ===== Module météo (back office) =====
+// Module météo (back office)
 Route::middleware(['auth', 'role:admin|gestionnaire'])
-    ->prefix('admin/weather')
-    ->name('admin.weather.')
+    ->prefix('admin/weather')->name('admin.weather.')
     ->group(function () {
-
-        Route::resource('forecasts', WeatherForecastController::class)->except('show');
-        Route::resource('risks', OutageRiskController::class)->except('show');
+        Route::resource('forecasts', WeatherForecastController::class);
+        Route::resource('risks', OutageRiskController::class);
 
         Route::get('alerts', [WeatherAlertController::class, 'index'])->name('alerts.index');
 
+        // Réservé à l'admin (définies avant alerts/{alert})
         Route::middleware('role:admin')->group(function () {
             Route::get('alerts/create', [WeatherAlertController::class, 'create'])->name('alerts.create');
             Route::post('alerts', [WeatherAlertController::class, 'store'])->name('alerts.store');
+            Route::get('alerts/{alert}/edit', [WeatherAlertController::class, 'edit'])->name('alerts.edit');
+            Route::put('alerts/{alert}', [WeatherAlertController::class, 'update'])->name('alerts.update');
             Route::delete('alerts/{alert}', [WeatherAlertController::class, 'destroy'])->name('alerts.destroy');
 
             Route::get('thresholds', [AlertThresholdController::class, 'edit'])->name('thresholds.edit');
             Route::put('thresholds', [AlertThresholdController::class, 'update'])->name('thresholds.update');
         });
+
+        Route::get('alerts/{alert}', [WeatherAlertController::class, 'show'])->name('alerts.show');
     });
 
 
