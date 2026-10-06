@@ -1,11 +1,11 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
         <div class="sidebar-brand-icon rotate-n-15">
-            <i class="fas fa-temperature-high"></i>
+            <!-- <i class="fas fa-temperature-high"></i> -->
         </div>
         <div class="sidebar-brand-text mx-3">
-            <img src="img/logo4.png" height="80">
-        </div>
+                          <img src="img/logo4.png" height="80">
+</div>
     </a>
 
     <hr class="sidebar-divider my-0">
@@ -94,30 +94,24 @@
             </a>
         </li>
     @endrole
-
-    <hr class="sidebar-divider">
-    <div class="sidebar-heading">Mon compte</div>
-
-    @php $unread = auth()->user()->unreadNotifications()->count(); @endphp
-
-    <li class="nav-item {{ request()->routeIs('notifications.index') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('notifications.index') }}">
-            <i class="fas fa-fw fa-envelope"></i>
-            <span>Mes notifications</span>
-
-            @if ($unread > 0)
-                <span class="badge badge-danger ml-1">{{ $unread }}</span>
-            @endif
-        </a>
-    </li>
-
-    <li class="nav-item {{ request()->routeIs('notifications.preferences.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('notifications.preferences.edit') }}">
-            <i class="fas fa-fw fa-cog"></i>
-            <span>Préférences</span>
-        </a>
-    </li>
-
+<li class="nav-item {{ request()->routeIs('outages.*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('outages.index') }}">
+        <i class="fas fa-fw fa-bolt"></i>
+        <span>Coupures</span>
+    </a>
+</li>
+<li class="nav-item {{ request()->routeIs('neighborhoods.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('neighborhoods.index') }}">
+                <i class="fas fa-fw fa-map-marker-alt"></i>
+                <span>Quartiers</span>
+            </a>
+        </li>
+      <li class="nav-item {{ request()->routeIs('admin.equipements.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.equipements.index') }}">
+                <i class="fas fa-fw fa-tools"></i>
+                <span>Équipements</span>
+            </a>
+        </li>
     <hr class="sidebar-divider d-none d-md-block">
 
     <div class="text-center d-none d-md-inline">
