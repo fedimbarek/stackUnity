@@ -35,14 +35,4 @@ return [
         ],
     ],
 
-    'weather' => [
-    'heat_warning' => env('HEAT_WARNING', 35),
-    'heat_threshold' => env('HEAT_THRESHOLD', 38),
-],
-
-    'gemini' => [
-    'key' => env('GEMINI_API_KEY'),
-    'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
-],
-
 ];

@@ -4,24 +4,8 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\FrontOfficeController;
 use App\Http\Controllers\OutageController;
 use App\Http\Controllers\ProfileController;
-
-use App\Http\Controllers\Admin\OutageRiskController;
-use App\Http\Controllers\Admin\WeatherForecastController;
-use App\Http\Controllers\WeatherController;
-use App\Http\Controllers\Admin\AlertThresholdController;
-use App\Http\Controllers\Admin\WeatherAlertController;
-use App\Http\Controllers\UserNotificationController;
-use App\Http\Controllers\Admin\BroadcastController;
-use App\Http\Controllers\NotificationPreferenceController;
-
-use App\Http\Controllers\Api\AlertApiController;
-use App\Http\Controllers\Api\NotificationApiController;
-use App\Http\Controllers\Api\WeatherApiController;
-use App\Http\Middleware\ForceJsonResponse;
-
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\NeighborhoodController;
-use App\Http\Controllers\EquipementC\Equipementc;
+use App\Http\Controllers\CoolingPointController;
 
 // ===== FrontOffice (public, sans authentification) =====
 Route::get('/', [FrontOfficeController::class, 'home'])->name('front.home');
@@ -78,16 +62,12 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
 });
 
-Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
-    Route::resource('neighborhoods', NeighborhoodController::class);
-    Route::name('admin.')->group(function () {
-        Route::get('/equipements', [Equipementc::class, 'index'])->name('equipements.index');
-        Route::get('/equipements/create', [Equipementc::class, 'create'])->name('equipements.create');
-        Route::post('/equipements', [Equipementc::class, 'store'])->name('equipements.store');
-        Route::get('/equipements/{equipement}/edit', [Equipementc::class, 'edit'])->name('equipements.edit');
-        Route::put('/equipements/{equipement}', [Equipementc::class, 'update'])->name('equipements.update');
-        Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])->name('equipements.destroy');
-    });
-});
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/cooling-points', [CoolingPointController::class, 'index'])
+        ->name('cooling-points.index');
+
+    Route::post('/cooling-points/fetch', [CoolingPointController::class, 'fetch'])
+        ->name('cooling-points.fetch');
+});
 require __DIR__.'/auth.php';
