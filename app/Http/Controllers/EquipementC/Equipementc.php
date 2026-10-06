@@ -34,6 +34,15 @@ class Equipementc extends Controller
         return view('Equipement.FrontEquipement', compact('equipements'));
     }
 
+    public function reservations(Equipement $equipement): View
+    {
+        $reservations = $equipement->reservations()
+            ->latest()
+            ->paginate(15);
+
+        return view('Equipement.Reservations', compact('equipement', 'reservations'));
+    }
+
     public function store(EquipementRequest $request): RedirectResponse
     {
         $data = $request->validated();

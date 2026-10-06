@@ -6,6 +6,7 @@ use App\Models\Equipement;
 use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class EquipementTest extends TestCase
@@ -85,6 +86,45 @@ class EquipementTest extends TestCase
 
         $response->assertSessionHasErrors('date_fin');
         $this->assertDatabaseCount('reservations', 0);
+    }
+
+    public function test_manager_can_view_reservations_for_selected_equipement(): void
+    {
+        $role = Role::findOrCreate('gestionnaire', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        $equipement = Equipement::factory()->create(['nom' => 'Tente de secours']);
+        $autreEquipement = Equipement::factory()->create(['nom' => 'Groupe électrogène']);
+
+        $equipement->reservations()->create([
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(3)->toDateString(),
+        ]);
+
+        $autreEquipement->reservations()->create([
+            'nom' => 'Autre client',
+            'prenom' => 'Test',
+            'email' => 'autre@example.com',
+            'numero' => '22987654',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(2)->toDateString(),
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get(route('admin.equipements.reservations.index', $equipement));
+
+        $response
+            ->assertOk()
+            ->assertViewIs('Equipement.Reservations')
+            ->assertSee('Tente de secours')
+            ->assertSee('amira@example.com')
+            ->assertDontSee('autre@example.com');
     }
 
     public function test_equipements_page_is_displayed(): void
