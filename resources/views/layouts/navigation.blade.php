@@ -69,13 +69,14 @@
             <span>Coupures</span>
         </a>
     </li>
-
+@role('admin|gestionnaire')
     <li class="nav-item {{ request()->routeIs('neighborhoods.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('neighborhoods.index') }}">
             <i class="fas fa-fw fa-map-marker-alt"></i>
             <span>Quartiers</span>
         </a>
     </li>
+    @endrole
 
 
     <!-- Météo -->
@@ -147,6 +148,22 @@
         </a>
     </li>
 >>>>>>> origin/main
+
+     @role('admin|gestionnaire')
+        <li class="nav-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.contacts.index') }}">
+                <i class="fas fa-fw fa-phone-alt"></i>
+                <span>Contacts d'urgence</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('admin.contact-categories.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.contact-categories.index') }}">
+                <i class="fas fa-fw fa-tags"></i>
+                <span>Catégories</span>
+            </a>
+        </li>
+    @endrole
 
 
     <hr class="sidebar-divider d-none d-md-block">
