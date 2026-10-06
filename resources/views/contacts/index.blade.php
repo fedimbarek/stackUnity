@@ -52,7 +52,7 @@
             @endforeach
         </div>
     @endif
-
+<<! --  dddd-- >>
     {{-- PILLS CATÉGORIES --}}
     <div class="d-flex flex-wrap gap-2 mb-4">
         <a href="{{ route('contacts.index') }}"
