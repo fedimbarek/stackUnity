@@ -52,14 +52,24 @@
             <span>Coupures</span>
         </a>
     </li>
-@role('admin|gestionnaire')
-    <li class="nav-item {{ request()->routeIs('neighborhoods.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('neighborhoods.index') }}">
-            <i class="fas fa-fw fa-map-marker-alt"></i>
-            <span>Quartiers</span>
-        </a>
-    </li>
+
+    @role('admin|gestionnaire')
+        <li class="nav-item {{ request()->routeIs('neighborhoods.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('neighborhoods.index') }}">
+                <i class="fas fa-fw fa-map-marker-alt"></i>
+                <span>Quartiers</span>
+            </a>
+        </li>
     @endrole
+
+    @hasanyrole('admin|gestionnaire|resident')
+        <li class="nav-item {{ request()->routeIs('cooling-points.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('cooling-points.index') }}">
+                <i class="fas fa-fw fa-snowflake"></i>
+                <span>Points de Fraîcheur</span>
+            </a>
+        </li>
+    @endhasanyrole
 
 
     <!-- Météo -->
@@ -131,7 +141,9 @@
         </a>
     </li>
 
-     @role('admin|gestionnaire')
+
+    <!-- Contacts d'urgence -->
+    @role('admin|gestionnaire')
         <li class="nav-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.contacts.index') }}">
                 <i class="fas fa-fw fa-phone-alt"></i>

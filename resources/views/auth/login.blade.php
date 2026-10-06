@@ -139,8 +139,8 @@
             </div>
 
             <div class="auth-right">
-    <!-- <div class="auth-logo-shape"></div> -->
-    <img src="img/logo4.png" height="120">
+                <!-- <div class="auth-logo-shape"></div> -->
+                               <img src="img/logo4.png" height="120">
 
                 <h3>HEATALERT</h3>
                 <h1>Content de te revoir !</h1>
