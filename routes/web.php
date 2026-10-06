@@ -22,11 +22,15 @@ use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NeighborhoodController;
 use App\Http\Controllers\EquipementC\Equipementc;
+use App\Http\Controllers\ReservationController;
 
 // ===== FrontOffice (public, sans authentification) =====
 Route::get('/', [FrontOfficeController::class, 'home'])->name('front.home');
 Route::get('/carte', [FrontOfficeController::class, 'map'])->name('front.map');
 Route::get('/carte/data', [OutageController::class, 'map'])->name('front.map.data');
+Route::get('/Equipements', [Equipementc::class, 'frontIndex'])->name('front.equipements');
+Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
+    ->name('front.equipements.reservations.store');
 
 // ===== Dashboard =====
 Route::get('/dashboard', function () {

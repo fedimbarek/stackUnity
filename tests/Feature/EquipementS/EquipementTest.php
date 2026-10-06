@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Equipement;
+use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -10,6 +11,81 @@ use Tests\TestCase;
 class EquipementTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_public_equipements_page_is_displayed(): void
+    {
+        Equipement::factory()->create([
+            'nom' => 'Tente de secours',
+            'type_equipement' => 'Hébergement',
+        ]);
+
+        $response = $this->get(route('front.equipements'));
+
+        $response
+            ->assertOk()
+            ->assertViewIs('Equipement.FrontEquipement')
+            ->assertSee('Tente de secours')
+            ->assertSee('Équipements disponibles')
+            ->assertSee('Réserver')
+            ->assertSee('name="date_debut"', false)
+            ->assertSee('href="' . route('front.equipements') . '"', false);
+    }
+
+    public function test_reservation_can_be_created_for_an_equipement(): void
+    {
+        $equipement = Equipement::factory()->create();
+        $dateDebut = now()->addDay()->toDateString();
+        $dateFin = now()->addDays(3)->toDateString();
+
+        $response = $this->post(route('front.equipements.reservations.store', $equipement), [
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+            'date_debut' => $dateDebut,
+            'date_fin' => $dateFin,
+        ]);
+
+        $response
+            ->assertRedirect(route('front.equipements'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('reservations', [
+            'equipement_id' => $equipement->id,
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+        ]);
+
+        $reservation = $equipement->reservations()->firstOrFail();
+
+        $this->assertInstanceOf(Reservation::class, $reservation);
+        $this->assertSame($equipement->id, $reservation->equipement->id);
+        $this->assertSame($dateDebut, $reservation->date_debut->toDateString());
+        $this->assertSame($dateFin, $reservation->date_fin->toDateString());
+    }
+
+    public function test_reservation_end_date_cannot_be_before_start_date(): void
+    {
+        $equipement = Equipement::factory()->create();
+        $dateDebut = now()->addDays(2)->toDateString();
+
+        $response = $this->from(route('front.equipements'))->post(
+            route('front.equipements.reservations.store', $equipement),
+            [
+                'nom' => 'Ben Ali',
+                'prenom' => 'Amira',
+                'email' => 'amira@example.com',
+                'numero' => '22123456',
+                'date_debut' => $dateDebut,
+                'date_fin' => now()->addDay()->toDateString(),
+            ]
+        );
+
+        $response->assertSessionHasErrors('date_fin');
+        $this->assertDatabaseCount('reservations', 0);
+    }
 
     public function test_equipements_page_is_displayed(): void
     {

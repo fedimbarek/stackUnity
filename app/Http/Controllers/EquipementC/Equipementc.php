@@ -27,6 +27,13 @@ class Equipementc extends Controller
         return view('Equipement.CreateEquipement');
     }
 
+    public function frontIndex(): View
+    {
+        $equipements = $this->service->getAll();
+
+        return view('Equipement.FrontEquipement', compact('equipements'));
+    }
+
     public function store(EquipementRequest $request): RedirectResponse
     {
         $data = $request->validated();
