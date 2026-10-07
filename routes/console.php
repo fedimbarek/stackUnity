@@ -17,3 +17,4 @@ Schedule::command('app:close-stale-outages')->everyThirtyMinutes();
 
 // Rapport hebdomadaire
 // Schedule::job(new WeeklyReportJob)->weeklyOn(1, '06:00'); // chaque lundi à 6h
+//test

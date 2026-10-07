@@ -16,6 +16,16 @@ use App\Http\Controllers\Admin\WeatherForecastController;
 use App\Http\Controllers\Admin\AlertThresholdController;
 use App\Http\Controllers\Admin\WeatherAlertController;
 use App\Http\Controllers\Admin\BroadcastController;
+use App\Http\Controllers\Admin\CoolingPointController as AdminCoolingPointController;
+use App\Http\Controllers\Admin\CoolingPointTypeController;
+use App\Http\Controllers\Admin\ContactCategoryController;
+use App\Http\Controllers\Admin\EmergencyContactController as AdminContactController;
+
+// API JSON (vérifie les namespaces, voir les explications après le fichier)
+use App\Http\Controllers\Api\WeatherApiController;
+use App\Http\Controllers\Api\AlertApiController;
+use App\Http\Controllers\Api\NotificationApiController;
+use App\Http\Middleware\ForceJsonResponse;
 
 // Général
 use App\Http\Controllers\AuditLogController;
@@ -24,6 +34,8 @@ use App\Http\Controllers\NeighborhoodController;
 use App\Http\Controllers\OutageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\CoolingPointController;
+use App\Http\Controllers\EmergencyContactController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\UserNotificationController;
 use App\Http\Controllers\NotificationPreferenceController;
@@ -187,6 +199,11 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/audit-logs', [AuditLogController::class, 'index'])
             ->name('audit-logs.index');
 
+        // CRUD admin des points de fraîcheur
+        // (URLs : /admin/cooling-points, /admin/cooling-point-types)
+        Route::resource('cooling-point-types', CoolingPointTypeController::class);
+        Route::resource('cooling-points', AdminCoolingPointController::class);
+
     });
 
 
@@ -235,6 +252,23 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
     // Bouton « Actualiser la météo » (formulaire POST)
     Route::post('/weather/refresh', [WeatherController::class, 'refresh'])
         ->name('weather.refresh');
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| POINTS DE FRAÎCHEUR (utilisateurs connectés)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/cooling-points', [CoolingPointController::class, 'index'])
+        ->name('cooling-points.index');
+
+    Route::post('/cooling-points/fetch', [CoolingPointController::class, 'fetch'])
+        ->name('cooling-points.fetch');
 
 });
 
@@ -337,7 +371,55 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| API INTERNE (future application mobile)
+| API JSON : météo, alertes, notifications
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware([ForceJsonResponse::class, 'auth'])
+    ->prefix('api')
+    ->name('api.')
+    ->group(function () {
+
+        Route::get('/weather/current', [WeatherApiController::class, 'current'])
+            ->name('weather.current');
+
+        Route::get('/weather/forecast', [WeatherApiController::class, 'forecast'])
+            ->name('weather.forecast');
+
+        Route::get('/alerts', [AlertApiController::class, 'index'])
+            ->name('alerts.index');
+
+        Route::get('/notifications', [NotificationApiController::class, 'index'])
+            ->name('notifications.index');
+
+        Route::get('/notifications/preferences', [NotificationApiController::class, 'preferences'])
+            ->name('notifications.preferences');
+
+        Route::put('/notifications/preferences', [NotificationApiController::class, 'updatePreferences'])
+            ->name('notifications.preferences.update');
+
+        Route::put('/notifications/{id}/read', [NotificationApiController::class, 'read'])
+            ->name('notifications.read');
+
+        Route::middleware('role:admin')->group(function () {
+
+            Route::post('/alerts', [AlertApiController::class, 'store'])
+                ->name('alerts.store');
+
+            Route::put('/alerts/thresholds', [AlertApiController::class, 'thresholds'])
+                ->name('alerts.thresholds');
+
+            Route::post('/notifications/broadcast', [NotificationApiController::class, 'broadcast'])
+                ->name('notifications.broadcast');
+
+        });
+
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| API INTERNE : coupures (future application mobile)
 |--------------------------------------------------------------------------
 */
 
@@ -360,6 +442,32 @@ Route::middleware('auth')
             Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve']);
 
         });
+
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| CONTACTS D'URGENCE
+|--------------------------------------------------------------------------
+*/
+
+// Public
+Route::get('/contacts', [EmergencyContactController::class, 'index'])
+    ->name('contacts.index');
+
+Route::get('/contacts/{contact}', [EmergencyContactController::class, 'show'])
+    ->whereNumber('contact')
+    ->name('contacts.show');
+
+// Back office (admin + gestionnaire)
+Route::middleware(['auth', 'role:admin|gestionnaire'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+
+        Route::resource('contacts', AdminContactController::class)->except('show');
+        Route::resource('contact-categories', ContactCategoryController::class)->except('show');
 
     });
 

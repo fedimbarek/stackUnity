@@ -13,11 +13,21 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             NeighborhoodSeeder::class,
             UserSeeder::class,
+            DemoDataSeeder::class,
+
+            // Module météo (dhia)
             AlertThresholdSeeder::class,
             WeatherForecastSeeder::class,
             OutageRiskSeeder::class,
             WeatherAlertSeeder::class,
+
+            // Équipe (main) : parents avant enfants
+            ContactCategorySeeder::class,
+            EmergencyContactSeeder::class,
+            CoolingPointTypeSeeder::class,
+            CoolingPointSeeder::class,
         ]);
+
         Report::factory(6)->create();
     }
 }

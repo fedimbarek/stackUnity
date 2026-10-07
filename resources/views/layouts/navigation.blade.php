@@ -39,6 +39,21 @@
             </a>
         </li>
 
+        {{-- Gestion des points de fraîcheur --}}
+        <li class="nav-item {{ request()->routeIs('admin.cooling-points.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.cooling-points.index') }}">
+                <i class="fas fa-fw fa-snowflake"></i>
+                <span>Gérer les points de fraîcheur</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('admin.cooling-point-types.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.cooling-point-types.index') }}">
+                <i class="fas fa-fw fa-tags"></i>
+                <span>Types de points</span>
+            </a>
+        </li>
+
     @endrole
 
 
@@ -54,6 +69,16 @@
             <span>Coupures</span>
         </a>
     </li>
+
+    {{-- Points de fraîcheur (tous les rôles) --}}
+    @hasanyrole('admin|gestionnaire|resident')
+        <li class="nav-item {{ request()->routeIs('cooling-points.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('cooling-points.index') }}">
+                <i class="fas fa-fw fa-snowflake"></i>
+                <span>Points de Fraîcheur</span>
+            </a>
+        </li>
+    @endhasanyrole
 
 
     {{-- MENU MÉTÉO --}}
@@ -163,6 +188,30 @@
             <a class="nav-link" href="{{ route('admin.equipements.index') }}">
                 <i class="fas fa-fw fa-tools"></i>
                 <span>Équipements</span>
+            </a>
+        </li>
+
+    @endrole
+
+
+    {{-- URGENCES : contacts d'urgence (admin + gestionnaire) --}}
+    @role('admin|gestionnaire')
+
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-heading">Urgences</div>
+
+        <li class="nav-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.contacts.index') }}">
+                <i class="fas fa-fw fa-phone-alt"></i>
+                <span>Contacts d'urgence</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('admin.contact-categories.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.contact-categories.index') }}">
+                <i class="fas fa-fw fa-tags"></i>
+                <span>Catégories</span>
             </a>
         </li>
 
