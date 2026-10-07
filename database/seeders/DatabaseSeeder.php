@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\Report;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,5 +18,6 @@ class DatabaseSeeder extends Seeder
             OutageRiskSeeder::class,
             WeatherAlertSeeder::class,
         ]);
+        Report::factory(6)->create();
     }
 }
