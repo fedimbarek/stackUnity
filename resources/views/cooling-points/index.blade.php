@@ -234,10 +234,23 @@
                         if (!res.ok) throw new Error('HTTP ' + res.status);
 
                         const data = await res.json();
-                        allPoints = data.map(p => ({
-                            ...p,
-                            distance: haversine(userPos.lat, userPos.lng, p.latitude, p.longitude)
-                        })).sort((a, b) => a.distance - b.distance);
+                        const list = Array.isArray(data) ? data : (data.points ?? []);
+
+                        allPoints = list
+                            .map(p => {
+                                const latitude  = parseFloat(p.latitude);
+                                const longitude = parseFloat(p.longitude);
+                                return {
+                                    ...p,
+                                    latitude,
+                                    longitude,
+                                    distance: haversine(userPos.lat, userPos.lng, latitude, longitude)
+                                };
+                            })
+                            .filter(p => p.distance <= radius / 1000)
+                            .sort((a, b) => a.distance - b.distance);
+
+                        console.log('Points reçus :', allPoints.length);
 
                         applyFilters();
                         updateStats();
@@ -248,6 +261,7 @@
                         showLoader(false);
                     }
                 }
+
 
                 // ---- Filtres ----
                 function applyFilters() {
