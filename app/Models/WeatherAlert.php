@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class WeatherAlert extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'neighborhood_id', 'weather_forecast_id', 'created_by',
         'level', 'source', 'message',

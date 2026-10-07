@@ -46,6 +46,7 @@
                             </td>
                             <td>{{ $f->outage_risks_count }}</td>
                             <td class="d-flex">
+                                <a href="{{ route('admin.weather.forecasts.show', $f) }}" class="btn btn-sm btn-primary mr-2">Voir</a>
                                 <a href="{{ route('admin.weather.forecasts.edit', $f) }}" class="btn btn-sm btn-info mr-2">Modifier</a>
                                 <form method="POST" action="{{ route('admin.weather.forecasts.destroy', $f) }}"
                                       onsubmit="return confirm('Supprimer cette prévision ?')">

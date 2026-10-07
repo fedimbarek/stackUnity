@@ -17,9 +17,17 @@ class WeatherAlertController extends Controller
         return view('admin.weather.alerts.index', compact('alerts'));
     }
 
+    public function show(WeatherAlert $alert)
+    {
+        $alert->load(['neighborhood', 'forecast', 'creator']);
+
+        return view('admin.weather.alerts.show', compact('alert'));
+    }
+
     public function create()
     {
         return view('admin.weather.alerts.create', [
+            'alert' => new WeatherAlert(),
             'neighborhoods' => Neighborhood::orderBy('name')->get(),
         ]);
     }
@@ -35,6 +43,29 @@ class WeatherAlertController extends Controller
 
         return redirect()->route('admin.weather.alerts.index')
             ->with('status', 'Alerte déclenchée : les habitants du quartier vont être notifiés.');
+    }
+
+    public function edit(WeatherAlert $alert)
+    {
+        return view('admin.weather.alerts.edit', [
+            'alert' => $alert,
+            'neighborhoods' => Neighborhood::orderBy('name')->get(),
+        ]);
+    }
+
+    public function update(WeatherAlertRequest $request, WeatherAlert $alert)
+    {
+        $data = $request->validated();
+
+        // Une alerte automatique est liée à une prévision : son quartier ne change pas.
+        if ($alert->source === 'auto') {
+            unset($data['neighborhood_id']);
+        }
+
+        $alert->update($data);
+
+        return redirect()->route('admin.weather.alerts.show', $alert)
+            ->with('status', "Alerte modifiée. Aucune nouvelle notification n'est envoyée.");
     }
 
     public function destroy(WeatherAlert $alert)

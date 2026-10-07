@@ -1,76 +1,119 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Controllers
+|--------------------------------------------------------------------------
+*/
+
+// Admin
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\AuditLogController;
-use App\Http\Controllers\FrontOfficeController;
-use App\Http\Controllers\NeighborhoodController;
-use App\Http\Controllers\OutageController;
-use App\Http\Controllers\OutageUpdateController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\CoolingPointController;
-
 use App\Http\Controllers\Admin\OutageRiskController;
 use App\Http\Controllers\Admin\WeatherForecastController;
-use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\Admin\AlertThresholdController;
 use App\Http\Controllers\Admin\WeatherAlertController;
-use App\Http\Controllers\UserNotificationController;
 use App\Http\Controllers\Admin\BroadcastController;
-use App\Http\Controllers\NotificationPreferenceController;
-
-use App\Http\Controllers\Api\AlertApiController;
-use App\Http\Controllers\Api\NotificationApiController;
-use App\Http\Controllers\Api\WeatherApiController;
-use App\Http\Middleware\ForceJsonResponse;
-
-use App\Http\Controllers\EquipementC\Equipementc;
-
 use App\Http\Controllers\Admin\CoolingPointController as AdminCoolingPointController;
 use App\Http\Controllers\Admin\CoolingPointTypeController;
 use App\Http\Controllers\Admin\ContactCategoryController;
 use App\Http\Controllers\Admin\EmergencyContactController as AdminContactController;
+
+// API JSON (vérifie les namespaces, voir les explications après le fichier)
+use App\Http\Controllers\Api\WeatherApiController;
+use App\Http\Controllers\Api\AlertApiController;
+use App\Http\Controllers\Api\NotificationApiController;
+use App\Http\Middleware\ForceJsonResponse;
+
+// Général
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\FrontOfficeController;
+use App\Http\Controllers\NeighborhoodController;
+use App\Http\Controllers\OutageController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\CoolingPointController;
 use App\Http\Controllers\EmergencyContactController;
+use App\Http\Controllers\WeatherController;
+use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\NotificationPreferenceController;
 
-use Illuminate\Support\Facades\Route;
-
-
-// ===== FrontOffice (public, sans authentification) =====
-Route::get('/', [FrontOfficeController::class, 'home'])->name('front.home');
-Route::get('/carte', [FrontOfficeController::class, 'map'])->name('front.map');
-Route::get('/carte/data', [OutageController::class, 'map'])->name('front.map.data');
+// Équipements
+use App\Http\Controllers\EquipementC\Equipementc;
 
 
-// ===== Dashboard résident =====
+/*
+|--------------------------------------------------------------------------
+| FRONT OFFICE (public)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', [FrontOfficeController::class, 'home'])
+    ->name('front.home');
+
+Route::get('/carte', [FrontOfficeController::class, 'map'])
+    ->name('front.map');
+
+Route::get('/carte/data', [OutageController::class, 'map'])
+    ->name('front.map.data');
+
+
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD RÉSIDENT
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 
-// ===== Profil =====
+/*
+|--------------------------------------------------------------------------
+| PROFIL
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
+
 });
 
 
-// ===== Coupures (BackOffice, connecté) =====
+/*
+|--------------------------------------------------------------------------
+| COUPURES
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth')->group(function () {
 
+    // Liste
     Route::get('/outages', [OutageController::class, 'index'])
         ->name('outages.index');
 
+    // Création
     Route::post('/outages', [OutageController::class, 'store'])
         ->name('outages.store');
 
+    // Carte (doit rester AVANT /outages/{outage})
     Route::get('/outages/map', [OutageController::class, 'map'])
         ->name('outages.map');
 
-    Route::get('/outages/{outage}', [OutageController::class, 'show'])
-        ->name('outages.show');
-
+    // Gestion : admin + gestionnaire
     Route::middleware('role:admin|gestionnaire')->group(function () {
 
         Route::get('/outages/{outage}/edit', [OutageController::class, 'edit'])
@@ -88,97 +131,192 @@ Route::middleware('auth')->group(function () {
         Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve'])
             ->name('outages.resolve');
 
-        // Routes pour les mises à jour des coupures
-        // Route::post('/outages/{outage}/updates', [OutageUpdateController::class, 'store'])
-        //     ->name('outages.updates.store');
-
-        // Route::put('/outages/{outage}/updates/{update}', [OutageUpdateController::class, 'update'])
-        //     ->name('outages.updates.update');
-
-        // Route::delete('/outages/{outage}/updates/{update}', [OutageUpdateController::class, 'destroy'])
-        //     ->name('outages.updates.destroy');
     });
+
+    // Détails (en dernier : /outages/{outage} capture tout le reste)
+    Route::get('/outages/{outage}', [OutageController::class, 'show'])
+        ->name('outages.show');
+
 });
 
 
-// ===== Quartiers (admin/gestionnaire) =====
+/*
+|--------------------------------------------------------------------------
+| QUARTIERS (admin + gestionnaire)
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+
     Route::resource('neighborhoods', NeighborhoodController::class);
+
 });
 
 
-// ===== Rapports (admin/gestionnaire) =====
+/*
+|--------------------------------------------------------------------------
+| RAPPORTS (admin + gestionnaire)
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
-    Route::resource('reports', ReportController::class);
-
+    // Avant le resource, pour ne pas être masquées par reports/{report}
     Route::get('/reports/{report}/download', [ReportController::class, 'download'])
         ->name('reports.download');
 
     Route::post('/reports/{report}/send', [ReportController::class, 'send'])
         ->name('reports.send');
+
+    Route::resource('reports', ReportController::class);
+
 });
 
 
-// ===== Admin (dashboard KPI, utilisateurs, audit) =====
-// ===== Admin (dashboard KPI, utilisateurs, audit) =====
+/*
+|--------------------------------------------------------------------------
+| ADMINISTRATION (admin uniquement)
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
 
+        // Dashboard admin
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
+        // Utilisateurs
         Route::get('/users', [AdminUserController::class, 'index'])
             ->name('users.index');
 
         Route::put('/users/{user}/role', [AdminUserController::class, 'updateRole'])
             ->name('users.updateRole');
 
+        // Journal d'audit
         Route::get('/audit-logs', [AuditLogController::class, 'index'])
             ->name('audit-logs.index');
 
-        // ✅ CRUD admin des points de fraîcheur (URLs : /admin/cooling-points, /admin/cooling-point-types)
+        // CRUD admin des points de fraîcheur
+        // (URLs : /admin/cooling-points, /admin/cooling-point-types)
         Route::resource('cooling-point-types', CoolingPointTypeController::class);
         Route::resource('cooling-points', AdminCoolingPointController::class);
+
     });
 
 
-// ===== API (pour la future appli mobile) =====
-Route::middleware('auth')->prefix('api')->group(function () {
+/*
+|--------------------------------------------------------------------------
+| NOTIFICATION À UN QUARTIER (admin uniquement)
+|--------------------------------------------------------------------------
+*/
 
-    Route::get('/outages', [OutageController::class, 'index']);
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin/notifications')
+    ->name('admin.notifications.')
+    ->group(function () {
 
-    Route::post('/outages', [OutageController::class, 'store']);
+        Route::get('/broadcast', [BroadcastController::class, 'create'])
+            ->name('broadcast.create');
 
-    Route::get('/outages/map', [OutageController::class, 'map']);
+        Route::post('/broadcast', [BroadcastController::class, 'store'])
+            ->name('broadcast.store');
 
-    Route::get('/outages/{outage}', [OutageController::class, 'show']);
-
-    Route::middleware('role:admin|gestionnaire')->group(function () {
-
-        Route::put('/outages/{outage}/confirm', [OutageController::class, 'confirm']);
-
-        Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve']);
     });
+
+
+/*
+|--------------------------------------------------------------------------
+| PRÉVISIONS CANICULE
+|--------------------------------------------------------------------------
+*/
+
+// Tous les utilisateurs connectés
+Route::middleware('auth')->group(function () {
+
+    // Page des prévisions
+    Route::get('/weather', [WeatherController::class, 'index'])
+        ->name('weather.index');
+
+    // Bouton « Conseils IA » (formulaire POST)
+    Route::post('/weather/advice', [WeatherController::class, 'advice'])
+        ->name('weather.advice');
+
+});
+
+// Admin + gestionnaire
+Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+
+    // Bouton « Actualiser la météo » (formulaire POST)
+    Route::post('/weather/refresh', [WeatherController::class, 'refresh'])
+        ->name('weather.refresh');
+
 });
 
 
-// ===== Points de fraîcheur (Cooling Points) =====
-Route::middleware(['auth'])->group(function () {
+/*
+|--------------------------------------------------------------------------
+| POINTS DE FRAÎCHEUR (utilisateurs connectés)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
     Route::get('/cooling-points', [CoolingPointController::class, 'index'])
         ->name('cooling-points.index');
 
     Route::post('/cooling-points/fetch', [CoolingPointController::class, 'fetch'])
         ->name('cooling-points.fetch');
+
 });
 
 
-// ===== Équipements (admin/gestionnaire) =====
-Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+/*
+|--------------------------------------------------------------------------
+| MODULE MÉTÉO - ADMIN / GESTIONNAIRE
+|--------------------------------------------------------------------------
+*/
 
-    Route::name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin|gestionnaire'])
+    ->prefix('admin/weather')
+    ->name('admin.weather.')
+    ->group(function () {
+
+        // Gestion des prévisions
+        Route::resource('forecasts', WeatherForecastController::class);
+
+        // Risques de coupure
+        Route::resource('risks', OutageRiskController::class);
+
+        // Alertes météo (index, create, store, show, edit, update, destroy)
+        Route::resource('alerts', WeatherAlertController::class);
+
+        // Seuils d'alerte : admin uniquement
+        Route::middleware('role:admin')->group(function () {
+
+            Route::get('thresholds', [AlertThresholdController::class, 'edit'])
+                ->name('thresholds.edit');
+
+            Route::put('thresholds', [AlertThresholdController::class, 'update'])
+                ->name('thresholds.update');
+
+        });
+
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| ÉQUIPEMENTS (admin + gestionnaire)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:admin|gestionnaire'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
         Route::get('/equipements', [Equipementc::class, 'index'])
             ->name('equipements.index');
@@ -197,78 +335,46 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
         Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])
             ->name('equipements.destroy');
+
     });
-});
+
+
+/*
+|--------------------------------------------------------------------------
+| NOTIFICATIONS UTILISATEUR + PRÉFÉRENCES
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware('auth')->group(function () {
-    Route::get('/weather', [WeatherController::class, 'index'])->name('weather.index');
-    Route::post('/weather/advice', [WeatherController::class, 'advice'])->name('weather.advice');
 
-    Route::middleware('role:admin|gestionnaire')->group(function () {
-        Route::post('/weather/refresh', [WeatherController::class, 'refresh'])->name('weather.refresh');
-    });
-});
-
-
-// ===== Module météo (back office) =====
-Route::middleware(['auth', 'role:admin|gestionnaire'])
-    ->prefix('admin/weather')
-    ->name('admin.weather.')
-    ->group(function () {
-
-        Route::resource('forecasts', WeatherForecastController::class)->except('show');
-        Route::resource('risks', OutageRiskController::class)->except('show');
-
-        Route::get('alerts', [WeatherAlertController::class, 'index'])->name('alerts.index');
-
-        Route::middleware('role:admin')->group(function () {
-            Route::get('alerts/create', [WeatherAlertController::class, 'create'])->name('alerts.create');
-            Route::post('alerts', [WeatherAlertController::class, 'store'])->name('alerts.store');
-            Route::delete('alerts/{alert}', [WeatherAlertController::class, 'destroy'])->name('alerts.destroy');
-
-            Route::get('thresholds', [AlertThresholdController::class, 'edit'])->name('thresholds.edit');
-            Route::put('thresholds', [AlertThresholdController::class, 'update'])->name('thresholds.update');
-        });
-    });
-
-
-// ===== Historique des notifications =====
-Route::middleware('auth')->group(function () {
+    // Liste des notifications
     Route::get('/notifications', [UserNotificationController::class, 'index'])
         ->name('notifications.index');
 
+    // Bouton « Tout marquer comme lu »
     Route::put('/notifications/read-all', [UserNotificationController::class, 'readAll'])
         ->name('notifications.readAll');
 
-    Route::put('/notifications/{id}/read', [UserNotificationController::class, 'read'])
+    // Marquer UNE notification comme lue
+    Route::match(['put', 'patch', 'post'], '/notifications/{id}/read', [UserNotificationController::class, 'read'])
         ->name('notifications.read');
-});
 
-
-// ===== Préférences de notification =====
-Route::middleware('auth')->group(function () {
+    // Préférences
     Route::get('/notifications/preferences', [NotificationPreferenceController::class, 'edit'])
         ->name('notifications.preferences.edit');
 
     Route::put('/notifications/preferences', [NotificationPreferenceController::class, 'update'])
         ->name('notifications.preferences.update');
+
 });
 
 
-// ===== Notification manuelle ciblée =====
-Route::middleware(['auth', 'role:admin'])
-    ->prefix('admin/notifications')
-    ->name('admin.notifications.')
-    ->group(function () {
-        Route::get('broadcast', [BroadcastController::class, 'create'])
-            ->name('broadcast.create');
+/*
+|--------------------------------------------------------------------------
+| API JSON : météo, alertes, notifications
+|--------------------------------------------------------------------------
+*/
 
-        Route::post('broadcast', [BroadcastController::class, 'store'])
-            ->name('broadcast.store');
-    });
-
-
-// ===== API JSON : météo, alertes, notifications =====
 Route::middleware([ForceJsonResponse::class, 'auth'])
     ->prefix('api')
     ->name('api.')
@@ -296,6 +402,7 @@ Route::middleware([ForceJsonResponse::class, 'auth'])
             ->name('notifications.read');
 
         Route::middleware('role:admin')->group(function () {
+
             Route::post('/alerts', [AlertApiController::class, 'store'])
                 ->name('alerts.store');
 
@@ -304,25 +411,71 @@ Route::middleware([ForceJsonResponse::class, 'auth'])
 
             Route::post('/notifications/broadcast', [NotificationApiController::class, 'broadcast'])
                 ->name('notifications.broadcast');
+
         });
+
     });
 
 
-// ===== Contacts d'urgence (public) =====
-Route::get('/contacts', [EmergencyContactController::class, 'index'])->name('contacts.index');
+/*
+|--------------------------------------------------------------------------
+| API INTERNE : coupures (future application mobile)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')
+    ->prefix('api')
+    ->group(function () {
+
+        Route::get('/outages', [OutageController::class, 'index']);
+
+        Route::post('/outages', [OutageController::class, 'store']);
+
+        Route::get('/outages/map', [OutageController::class, 'map']);
+
+        Route::get('/outages/{outage}', [OutageController::class, 'show']);
+
+        Route::middleware('role:admin|gestionnaire')->group(function () {
+
+            Route::put('/outages/{outage}/confirm', [OutageController::class, 'confirm']);
+
+            Route::put('/outages/{outage}/resolve', [OutageController::class, 'resolve']);
+
+        });
+
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| CONTACTS D'URGENCE
+|--------------------------------------------------------------------------
+*/
+
+// Public
+Route::get('/contacts', [EmergencyContactController::class, 'index'])
+    ->name('contacts.index');
+
 Route::get('/contacts/{contact}', [EmergencyContactController::class, 'show'])
     ->whereNumber('contact')
     ->name('contacts.show');
 
-
-// ---------- BackOffice contacts d'urgence ----------
+// Back office (admin + gestionnaire)
 Route::middleware(['auth', 'role:admin|gestionnaire'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+
         Route::resource('contacts', AdminContactController::class)->except('show');
         Route::resource('contact-categories', ContactCategoryController::class)->except('show');
+
     });
 
 
-require __DIR__.'/auth.php';
+/*
+|--------------------------------------------------------------------------
+| AUTHENTIFICATION
+|--------------------------------------------------------------------------
+*/
+
+require __DIR__ . '/auth.php';

@@ -27,7 +27,7 @@
                         <th>Source</th>
                         <th>Message</th>
                         <th>Créée par</th>
-                        @role('admin') <th>Actions</th> @endrole
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -43,18 +43,20 @@
                                 @endif
                             </td>
                             <td>{{ $a->source === 'auto' ? 'Automatique' : 'Manuelle' }}</td>
-                            <td>{{ \Illuminate\Support\Str::limit($a->message, 70) }}</td>
+                            <td>{{ \Illuminate\Support\Str::limit($a->message, 60) }}</td>
                             <td>{{ $a->creator?->name ?? '—' }}</td>
-                            @role('admin')
-                                <td>
+                            <td class="d-flex">
+                                <a href="{{ route('admin.weather.alerts.show', $a) }}" class="btn btn-sm btn-primary mr-2">Voir</a>
+                                @role('admin')
+                                    <a href="{{ route('admin.weather.alerts.edit', $a) }}" class="btn btn-sm btn-info mr-2">Modifier</a>
                                     <form method="POST" action="{{ route('admin.weather.alerts.destroy', $a) }}"
                                           onsubmit="return confirm('Supprimer cette alerte ?')">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-sm btn-danger">Supprimer</button>
                                     </form>
-                                </td>
-                            @endrole
+                                @endrole
+                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="text-center text-muted">Aucune alerte.</td></tr>

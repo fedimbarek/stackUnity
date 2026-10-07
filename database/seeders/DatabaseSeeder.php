@@ -2,16 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Report;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         $this->call([
@@ -19,6 +14,14 @@ class DatabaseSeeder extends Seeder
             NeighborhoodSeeder::class,
             UserSeeder::class,
             DemoDataSeeder::class,
+
+            // Module météo (dhia)
+            AlertThresholdSeeder::class,
+            WeatherForecastSeeder::class,
+            OutageRiskSeeder::class,
+            WeatherAlertSeeder::class,
+
+            // Équipe (main) : parents avant enfants
             ContactCategorySeeder::class,
             EmergencyContactSeeder::class,
             CoolingPointTypeSeeder::class,

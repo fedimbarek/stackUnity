@@ -2,12 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Pagination\Paginator;
 use App\Models\Neighborhood;
 use App\Models\Report;
 use App\Models\User;
 use App\Observers\AuditObserver;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,9 +25,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Évite l'erreur « clé trop longue » (index sur colonnes string en utf8mb4)
+        Schema::defaultStringLength(191);
+
+        // Pagination au style Bootstrap 4 (SB Admin 2)
         Paginator::useBootstrapFour();
-         User::observe(AuditObserver::class);
+
+        // Journal d'audit
+        User::observe(AuditObserver::class);
         Neighborhood::observe(AuditObserver::class);
         Report::observe(AuditObserver::class);
     }

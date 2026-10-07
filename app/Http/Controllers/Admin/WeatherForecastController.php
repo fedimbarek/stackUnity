@@ -19,6 +19,13 @@ class WeatherForecastController extends Controller
         return view('admin.weather.forecasts.index', compact('forecasts'));
     }
 
+    public function show(WeatherForecast $forecast)
+    {
+        $forecast->load(['neighborhood', 'outageRisks']);
+
+        return view('admin.weather.forecasts.show', compact('forecast'));
+    }
+
     public function create()
     {
         return view('admin.weather.forecasts.create', [
@@ -31,8 +38,7 @@ class WeatherForecastController extends Controller
     {
         WeatherForecast::create($request->validated());
 
-        return redirect()->route('admin.weather.forecasts.index')
-            ->with('status', 'Prévision ajoutée.');
+        return redirect()->route('admin.weather.forecasts.index')->with('status', 'Prévision ajoutée.');
     }
 
     public function edit(WeatherForecast $forecast)
@@ -47,15 +53,13 @@ class WeatherForecastController extends Controller
     {
         $forecast->update($request->validated());
 
-        return redirect()->route('admin.weather.forecasts.index')
-            ->with('status', 'Prévision modifiée.');
+        return redirect()->route('admin.weather.forecasts.show', $forecast)->with('status', 'Prévision modifiée.');
     }
 
     public function destroy(WeatherForecast $forecast)
     {
         $forecast->delete();
 
-        return redirect()->route('admin.weather.forecasts.index')
-            ->with('status', 'Prévision supprimée.');
+        return redirect()->route('admin.weather.forecasts.index')->with('status', 'Prévision supprimée.');
     }
 }
