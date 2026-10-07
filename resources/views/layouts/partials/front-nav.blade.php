@@ -14,7 +14,11 @@
                 <li class="nav-item"><a class="nav-link" href="{{ route('front.home') }}#features">Fonctionnalités</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('front.home') }}#how">Comment ça marche</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('front.map') }}">Carte en direct</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('front.equipements') }}">Équipements</a></li>
+                 <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('contacts.*') ? 'active' : '' }}" href="{{ route('contacts.index') }}">
+                        <i class="fas fa-phone-alt me-1"></i> Urgences
+                    </a>
+                </li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('front.home') }}#contact">Contact</a></li>
 
                 @auth
