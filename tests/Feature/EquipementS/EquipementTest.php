@@ -3,13 +3,234 @@
 namespace Tests\Feature;
 
 use App\Models\Equipement;
+use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class EquipementTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_public_equipements_page_is_displayed(): void
+    {
+        Equipement::factory()->create([
+            'nom' => 'Tente de secours',
+            'type_equipement' => 'Hébergement',
+        ]);
+
+        $response = $this->get(route('front.equipements'));
+
+        $response
+            ->assertOk()
+            ->assertViewIs('Equipement.FrontEquipement')
+            ->assertSee('Tente de secours')
+            ->assertSee('Équipements disponibles')
+            ->assertSee('Réserver')
+            ->assertSee('name="date_debut"', false)
+            ->assertSee('href="' . route('front.equipements') . '"', false);
+    }
+
+    public function test_reservation_can_be_created_for_an_equipement(): void
+    {
+        $equipement = Equipement::factory()->create();
+        $dateDebut = now()->addDay()->toDateString();
+        $dateFin = now()->addDays(3)->toDateString();
+
+        $response = $this->post(route('front.equipements.reservations.store', $equipement), [
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+            'date_debut' => $dateDebut,
+            'date_fin' => $dateFin,
+        ]);
+
+        $response
+            ->assertRedirect(route('front.equipements'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('reservations', [
+            'equipement_id' => $equipement->id,
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+        ]);
+
+        $reservation = $equipement->reservations()->firstOrFail();
+
+        $this->assertInstanceOf(Reservation::class, $reservation);
+        $this->assertSame($equipement->id, $reservation->equipement->id);
+        $this->assertSame($dateDebut, $reservation->date_debut->toDateString());
+        $this->assertSame($dateFin, $reservation->date_fin->toDateString());
+    }
+
+    public function test_reservation_end_date_cannot_be_before_start_date(): void
+    {
+        $equipement = Equipement::factory()->create();
+        $dateDebut = now()->addDays(2)->toDateString();
+
+        $response = $this->from(route('front.equipements'))->post(
+            route('front.equipements.reservations.store', $equipement),
+            [
+                'nom' => 'Ben Ali',
+                'prenom' => 'Amira',
+                'email' => 'amira@example.com',
+                'numero' => '22123456',
+                'date_debut' => $dateDebut,
+                'date_fin' => now()->addDay()->toDateString(),
+            ]
+        );
+
+        $response->assertSessionHasErrors('date_fin');
+        $this->assertDatabaseCount('reservations', 0);
+    }
+
+    public function test_manager_can_view_reservations_for_selected_equipement(): void
+    {
+        $role = Role::findOrCreate('gestionnaire', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        $equipement = Equipement::factory()->create(['nom' => 'Tente de secours']);
+        $autreEquipement = Equipement::factory()->create(['nom' => 'Groupe électrogène']);
+
+        $equipement->reservations()->create([
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(3)->toDateString(),
+        ]);
+
+        $autreEquipement->reservations()->create([
+            'nom' => 'Autre client',
+            'prenom' => 'Test',
+            'email' => 'autre@example.com',
+            'numero' => '22987654',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(2)->toDateString(),
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get(route('admin.equipements.reservations.index', $equipement));
+
+        $response
+            ->assertOk()
+            ->assertViewIs('Equipement.Reservations')
+            ->assertSee('Tente de secours')
+            ->assertSee('amira@example.com')
+            ->assertDontSee('autre@example.com');
+    }
+
+    public function test_manager_can_confirm_reservation_and_disable_public_booking(): void
+    {
+        $role = Role::findOrCreate('gestionnaire', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+        $equipement = Equipement::factory()->create();
+        $reservation = $equipement->reservations()->create([
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(3)->toDateString(),
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->post(route('admin.equipements.reservations.confirm', [$equipement, $reservation]));
+
+        $response->assertRedirect(route('admin.equipements.reservations.index', $equipement));
+        $this->assertSame('reserve', $equipement->fresh()->etat);
+        $this->assertNotNull($reservation->fresh()->confirmee_at);
+
+        $this->get(route('front.equipements'))
+            ->assertOk()
+            ->assertSee('Déjà réservé')
+            ->assertDontSee('name="date_debut"', false);
+    }
+
+    public function test_an_equipement_cannot_have_a_second_confirmed_reservation(): void
+    {
+        $role = Role::findOrCreate('gestionnaire', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+        $equipement = Equipement::factory()->create();
+        $reservationConfirmee = $equipement->reservations()->create([
+            'nom' => 'Premier',
+            'prenom' => 'Client',
+            'email' => 'premier@example.com',
+            'numero' => '22123456',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(3)->toDateString(),
+        ]);
+        $reservationConfirmee->forceFill(['confirmee_at' => now()])->save();
+        $reservationEnAttente = $equipement->reservations()->create([
+            'nom' => 'Deuxième',
+            'prenom' => 'Client',
+            'email' => 'deuxieme@example.com',
+            'numero' => '22987654',
+            'date_debut' => now()->addDays(4)->toDateString(),
+            'date_fin' => now()->addDays(5)->toDateString(),
+        ]);
+        $equipement->update(['etat' => 'reserve']);
+
+        $response = $this
+            ->actingAs($user)
+            ->post(route('admin.equipements.reservations.confirm', [$equipement, $reservationEnAttente]));
+
+        $response->assertSessionHasErrors('reservation');
+        $this->assertNull($reservationEnAttente->fresh()->confirmee_at);
+        $this->assertNotNull($reservationConfirmee->fresh()->confirmee_at);
+    }
+
+    public function test_deleting_confirmed_reservation_makes_equipement_available(): void
+    {
+        $role = Role::findOrCreate('gestionnaire', 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+        $equipement = Equipement::factory()->create(['etat' => 'reserve']);
+        $reservation = $equipement->reservations()->create([
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(3)->toDateString(),
+        ]);
+        $reservation->forceFill(['confirmee_at' => now()])->save();
+
+        $response = $this
+            ->actingAs($user)
+            ->delete(route('admin.equipements.reservations.destroy', [$equipement, $reservation]));
+
+        $response->assertRedirect(route('admin.equipements.reservations.index', $equipement));
+        $this->assertDatabaseMissing('reservations', ['id' => $reservation->id]);
+        $this->assertSame('disponible', $equipement->fresh()->etat);
+    }
+
+    public function test_public_reservation_is_rejected_when_equipement_is_reserved(): void
+    {
+        $equipement = Equipement::factory()->create(['etat' => 'reserve']);
+
+        $response = $this->post(route('front.equipements.reservations.store', $equipement), [
+            'nom' => 'Ben Ali',
+            'prenom' => 'Amira',
+            'email' => 'amira@example.com',
+            'numero' => '22123456',
+            'date_debut' => now()->addDay()->toDateString(),
+            'date_fin' => now()->addDays(3)->toDateString(),
+        ]);
+
+        $response->assertSessionHasErrors('equipement');
+        $this->assertDatabaseCount('reservations', 0);
+    }
 
     public function test_equipements_page_is_displayed(): void
     {
