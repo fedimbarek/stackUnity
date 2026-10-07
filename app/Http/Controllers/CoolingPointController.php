@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Services\CoolingPointService;
 use App\Models\CoolingPoint;
 use Illuminate\Http\Request;
-
+use App\Http\Controllers\Admin\CoolingPointTypeController;
+use App\Http\Controllers\Admin\CoolingPointController as AdminCoolingPointController;
 class CoolingPointController extends Controller
 {
     public function index()
@@ -28,6 +29,10 @@ class CoolingPointController extends Controller
             $request->radius ?? 2000
         );
 
-        return response()->json($points);
+        return response()->json([
+            'success' => true,
+            'count'   => count($points),
+            'points'  => $points,
+        ]);
     }
 }

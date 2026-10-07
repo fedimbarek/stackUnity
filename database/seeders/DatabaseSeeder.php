@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             DemoDataSeeder::class,
             ContactCategorySeeder::class,
             EmergencyContactSeeder::class,
+            CoolingPointTypeSeeder::class,
+            CoolingPointSeeder::class,
         ]);
 
         Report::factory(6)->create();

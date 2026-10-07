@@ -39,6 +39,20 @@
                 <span>Notification à un quartier</span>
             </a>
         </li>
+    {{-- ⚙️ Admin : gestion des points de fraîcheur --}}
+    <li class="nav-item {{ request()->routeIs('admin.cooling-points.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.cooling-points.index') }}">
+            <i class="fas fa-fw fa-snowflake"></i>
+            <span>Gérer les points de fraîcheur</span>
+        </a>
+    </li>
+
+    <li class="nav-item {{ request()->routeIs('admin.cooling-point-types.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('admin.cooling-point-types.index') }}">
+            <i class="fas fa-fw fa-tags"></i>
+            <span>Types de points</span>
+        </a>
+    </li>
     @endrole
 
 
