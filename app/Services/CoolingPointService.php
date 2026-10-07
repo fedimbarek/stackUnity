@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CoolingPoint;
+use App\Models\CoolingPointType;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -26,15 +27,24 @@ class CoolingPointService
         $lastStatus = null;
 
         foreach ($this->mirrors as $url) {
-            $response = Http::withHeaders([
-                'User-Agent' => 'HeatAlert/1.0 (contact@heatalert.tn)',
-                'Accept'     => 'application/json',
-            ])
-                ->timeout(90)
-                ->retry(2, 2000, throw: false)
-                ->withOptions(['verify' => false])
-                ->asForm()
-                ->post($url, ['data' => $query]);
+            try {
+                $response = Http::withHeaders([
+                    'User-Agent' => 'HeatAlert/1.0 (contact@heatalert.tn)',
+                    'Accept'     => 'application/json',
+                ])
+                    ->timeout(20)
+                    ->retry(1, 1000, throw: false)
+                    ->withOptions(['verify' => false]) // OK en local, à retirer en production
+                    ->asForm()
+                    ->post($url, ['data' => $query]);
+            } catch (\Throwable $e) {
+                Log::warning('Overpass mirror exception', [
+                    'url'   => $url,
+                    'error' => $e->getMessage(),
+                ]);
+                $response = null;
+                continue;
+            }
 
             if ($response->successful()) {
                 Log::info('Overpass OK', ['mirror' => $url]);
@@ -66,10 +76,14 @@ class CoolingPointService
             }
         }
 
+        // Correspondance : type interne (JS) -> slug de la table cooling_point_types
+        $slugMap = ['park' => 'parc', 'fountain' => 'fontaine', 'mall' => 'climatise'];
+        $typeIds = CoolingPointType::pluck('id', 'slug');
+
         foreach ($points as $point) {
             CoolingPoint::updateOrCreate(
                 ['osm_id' => $point['osm_id']],
-                $point
+                $point + ['cooling_point_type_id' => $typeIds[$slugMap[$point['type']] ?? ''] ?? null]
             );
         }
 
@@ -79,15 +93,15 @@ class CoolingPointService
     protected function buildOverpassQuery(float $lat, float $lng, int $radius): string
     {
         return <<<QUERY
-        [out:json][timeout:25];
-        (
-          node["amenity"="drinking_water"](around:{$radius},{$lat},{$lng});
-          way["leisure"="park"](around:{$radius},{$lat},{$lng});
-          node["shop"="mall"](around:{$radius},{$lat},{$lng});
-          way["leisure"="garden"](around:{$radius},{$lat},{$lng});
-        );
-        out center;
-        QUERY;
+[out:json][timeout:25];
+(
+  node["amenity"~"drinking_water|fountain"](around:{$radius},{$lat},{$lng});
+  way["leisure"~"park|garden"](around:{$radius},{$lat},{$lng});
+  node["shop"="mall"](around:{$radius},{$lat},{$lng});
+  way["shop"="mall"](around:{$radius},{$lat},{$lng});
+);
+out center;
+QUERY;
     }
 
     protected function normalizeElement(array $element): ?array
@@ -101,7 +115,7 @@ class CoolingPointService
         }
 
         $type = 'park';
-        if (($tags['amenity'] ?? '') === 'drinking_water') {
+        if (in_array($tags['amenity'] ?? '', ['drinking_water', 'fountain'], true)) {
             $type = 'fountain';
         } elseif (($tags['shop'] ?? '') === 'mall') {
             $type = 'mall';
