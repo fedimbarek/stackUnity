@@ -42,6 +42,7 @@ use App\Http\Controllers\NotificationPreferenceController;
 
 // Équipements
 use App\Http\Controllers\EquipementC\Equipementc;
+use App\Http\Controllers\ReservationController;
 
 
 /*
@@ -58,6 +59,13 @@ Route::get('/carte', [FrontOfficeController::class, 'map'])
 
 Route::get('/carte/data', [OutageController::class, 'map'])
     ->name('front.map.data');
+
+Route::get('/Equipements', [Equipementc::class, 'frontIndex'])
+    ->name('front.equipements');
+
+Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
+    ->name('front.equipements.reservations.store');
+
 
 
 /*
@@ -335,6 +343,15 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
 
         Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])
             ->name('equipements.destroy');
+
+        Route::get('/equipements/{equipement}/reservations', [ReservationController::class, 'index'])
+            ->name('equipements.reservations.index');
+
+        Route::post('/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
+            ->name('equipements.reservations.confirm');
+
+        Route::delete('/equipements/{equipement}/reservations/{reservation}', [ReservationController::class, 'destroy'])
+            ->name('equipements.reservations.destroy');
 
     });
 

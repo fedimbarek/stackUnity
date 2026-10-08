@@ -17,14 +17,10 @@ class Equipementc extends Controller
     }
 
     public function index(): View
-{
-    $equipements = $this->service->getAll();
-
-    return view('Equipement.StoreEquipement', compact('equipements'));
-}
-    public function create(): View
     {
-        return view('Equipement.CreateEquipement');
+        $equipements = $this->service->getAll();
+
+        return view('Equipement.StoreEquipement', compact('equipements'));
     }
 
     public function frontIndex(): View
@@ -34,13 +30,9 @@ class Equipementc extends Controller
         return view('Equipement.FrontEquipement', compact('equipements'));
     }
 
-    public function reservations(Equipement $equipement): View
+    public function create(): View
     {
-        $reservations = $equipement->reservations()
-            ->latest()
-            ->paginate(15);
-
-        return view('Equipement.Reservations', compact('equipement', 'reservations'));
+        return view('Equipement.CreateEquipement');
     }
 
     public function store(EquipementRequest $request): RedirectResponse

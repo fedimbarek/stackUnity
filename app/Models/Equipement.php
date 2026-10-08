@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Equipement extends Model
 {
@@ -19,7 +18,14 @@ class Equipement extends Model
         'etat',
     ];
 
-    public function reservations(): HasMany
+    protected function casts(): array
+    {
+        return [
+            'date_ajout' => 'date',
+        ];
+    }
+
+    public function reservations()
     {
         return $this->hasMany(Reservation::class);
     }

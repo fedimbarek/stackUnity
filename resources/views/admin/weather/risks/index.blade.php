@@ -30,6 +30,7 @@
                             <td>{{ $r->risk_level }}</td>
                             <td>{{ \Illuminate\Support\Str::limit($r->description, 70) }}</td>
                             <td class="d-flex">
+                                <a href="{{ route('admin.weather.risks.show', $r) }}" class="btn btn-sm btn-primary mr-2">Voir</a>
                                 <a href="{{ route('admin.weather.risks.edit', $r) }}" class="btn btn-sm btn-info mr-2">Modifier</a>
                                 <form method="POST" action="{{ route('admin.weather.risks.destroy', $r) }}"
                                       onsubmit="return confirm('Supprimer ce risque ?')">

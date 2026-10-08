@@ -7,9 +7,19 @@ use App\Models\Reservation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ReservationController extends Controller
 {
+    public function index(Equipement $equipement): View
+    {
+        $reservations = $equipement->reservations()
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        return view('Equipement.Reservations', compact('equipement', 'reservations'));
+    }
+
     public function store(Request $request, Equipement $equipement): RedirectResponse
     {
         $validated = $request->validate([

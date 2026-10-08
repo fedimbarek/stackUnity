@@ -14,7 +14,7 @@ class UserController extends Controller
     {
         $users = User::with(['neighborhood', 'roles'])
             ->latest()
-            ->paginate(1);
+            ->paginate(10);
 
         return view('admin.users.index', compact('users'));
     }

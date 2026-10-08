@@ -9,6 +9,8 @@
         <p>Anticipez les canicules et les coupures de courant dans votre quartier — alertes en temps réel, signalement communautaire, points de fraîcheur à proximité.</p>
         <a href="{{ route('front.map') }}" class="btn-heat me-2"><i class="fas fa-map-marked-alt me-1"></i> Voir la carte en direct</a>
         <a href="{{ route('register') }}" class="btn-heat-outline"><i class="fas fa-user-plus me-1"></i> Créer un compte</a>
+                <a href="{{ route('contacts.index') }}" class="btn-heat-outline"><i class="fas fa-phone-alt me-1"></i> Urgences</a>
+
     </div>
 </header>
 
