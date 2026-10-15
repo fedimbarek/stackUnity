@@ -12,8 +12,8 @@
             </button>
         </div>
 
-        {{-- Statistiques --}}
-        <div class="row">
+        {{-- Statistiques dynamiques --}}
+        <div class="row" id="statsRow">
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
@@ -27,49 +27,10 @@
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Parcs</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="statParks">0</div>
-                            </div>
-                            <div class="col-auto"><i class="fas fa-tree fa-2x text-gray-300"></i></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Fontaines</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="statFountains">0</div>
-                            </div>
-                            <div class="col-auto"><i class="fas fa-tint fa-2x text-gray-300"></i></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Climatisés</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="statMalls">0</div>
-                            </div>
-                            <div class="col-auto"><i class="fas fa-snowflake fa-2x text-gray-300"></i></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="row">
-            {{-- Colonne filtres + liste --}}
+            {{-- Filtres + liste --}}
             <div class="col-lg-4 mb-4">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
@@ -77,11 +38,8 @@
                     </div>
                     <div class="card-body">
                         <input type="text" class="form-control mb-3" id="searchInput" placeholder="Rechercher un lieu...">
-                        <div class="btn-group btn-group-sm btn-block mb-3" role="group">
+                        <div class="btn-group btn-group-sm btn-block mb-3 flex-wrap" role="group" id="filterGroup">
                             <button type="button" class="btn btn-primary filter-btn" data-filter="all">Tous</button>
-                            <button type="button" class="btn btn-outline-primary filter-btn" data-filter="park">Parcs</button>
-                            <button type="button" class="btn btn-outline-primary filter-btn" data-filter="fountain">Fontaines</button>
-                            <button type="button" class="btn btn-outline-primary filter-btn" data-filter="mall">Climatisés</button>
                         </div>
                         <label class="small text-muted d-flex justify-content-between mb-1">
                             <span>Rayon de recherche</span>
@@ -123,17 +81,25 @@
     </div>
 
     @push('scripts')
+        {{-- Leaflet --}}
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        {{-- ✅ MarkerCluster : regroupement automatique des marqueurs --}}
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+        <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
         <script>
             (function () {
                 'use strict';
 
-                const ICONS  = { park:'🌳', fountain:'💧', mall:'❄️' };
-                const COLORS = { park:'#1cc88a', fountain:'#36b9cc', mall:'#f6c23e' };
+                let ICONS  = {};
+                let COLORS = {};
+                let TYPES  = [];
 
                 let map = null;
-                let markers = [];
+                let clusterGroup = null;    // ✅ remplace markers[]
                 let userMarker = null;
                 let userPos = null;
                 let allPoints = [];
@@ -144,10 +110,7 @@
                 // ---- Init carte ----
                 function initMap() {
                     const el = document.getElementById('cooling-map');
-                    if (!el || typeof L === 'undefined') {
-                        console.warn('Carte : élément ou Leaflet absent');
-                        return;
-                    }
+                    if (!el || typeof L === 'undefined') return;
                     if (map) return;
 
                     map = L.map(el).setView([36.8065, 10.1815], 13);
@@ -155,25 +118,69 @@
                         attribution: '© OpenStreetMap',
                         maxZoom: 19
                     }).addTo(map);
-                    console.log('✅ Carte initialisée');
+
+                    // ✅ Cluster group
+                    clusterGroup = L.markerClusterGroup({
+                        maxClusterRadius: 60,
+                        showCoverageOnHover: false,
+                        spiderfyOnMaxZoom: true,
+                        disableClusteringAtZoom: 16,
+                        chunkedLoading: true,       // ✅ rendu progressif = pas de freeze
+                        chunkInterval: 100,
+                        chunkDelay: 30
+                    });
+                    map.addLayer(clusterGroup);
+
+                    console.log('✅ Carte + cluster initialisés');
                 }
 
-                // ---- Icône ----
+                // ---- Icône (petite = plus rapide) ----
                 function iconFor(type) {
                     const c = COLORS[type] || '#858796';
-                    const i = ICONS[type] || '📍';
+                    const i = ICONS[type]  || 'fa-map-marker-alt';
                     return L.divIcon({
                         className: '',
-                        html: `<div style="background:${c};width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center">
-                     <span style="transform:rotate(45deg);font-size:12px">${i}</span>
-                   </div>`,
-                        iconSize: [26, 26],
-                        iconAnchor: [13, 26],
-                        popupAnchor: [0, -26]
+                        html: `<div style="background:${c};width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center">
+                                 <i class="fas ${i}" style="transform:rotate(45deg);font-size:10px;color:#fff"></i>
+                               </div>`,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 24],
+                        popupAnchor: [0, -22]
                     });
                 }
 
-                // ---- Distance Haversine ----
+                // ---- Popup détaillé ----
+                function buildPopup(p) {
+                    const color = p.type_color || COLORS[p.type] || '#858796';
+                    const label = p.type_name  || p.type;
+                    const addr  = p.address
+                        ? `<div style="margin-top:4px"><i class="fas fa-map-marker-alt" style="color:#999"></i> ${escapeHtml(p.address)}</div>`
+                        : '';
+                    const hours = p.opening_hours
+                        ? `<div style="margin-top:2px"><i class="fas fa-clock" style="color:#999"></i> ${escapeHtml(p.opening_hours)}</div>`
+                        : '';
+                    const routeUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}`;
+
+                    return `
+                    <div style="min-width:200px;font-family:inherit">
+                        <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:#333">
+                            ${escapeHtml(p.name)}
+                        </div>
+                        <span style="display:inline-block;padding:2px 10px;border-radius:12px;background:${color};color:#fff;font-size:11px;font-weight:600">
+                            <i class="fas ${p.type_icon || ''}"></i> ${escapeHtml(label)}
+                        </span>
+                        <div style="font-size:12px;color:#555;margin-top:8px;line-height:1.5">
+                            <div><i class="fas fa-route" style="color:#999"></i> ${p.distance.toFixed(2)} km de vous</div>
+                            ${addr}${hours}
+                        </div>
+                        <a href="${routeUrl}" target="_blank" rel="noopener"
+                           style="display:block;margin-top:10px;padding:6px 10px;background:#4e73df;color:#fff;text-decoration:none;border-radius:4px;text-align:center;font-size:12px;font-weight:600">
+                            <i class="fas fa-directions"></i> Itinéraire
+                        </a>
+                    </div>`;
+                }
+
+                // ---- Haversine ----
                 function haversine(lat1, lon1, lat2, lon2) {
                     const R = 6371;
                     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -220,6 +227,7 @@
                     if (!userPos) return;
                     showLoader(true);
                     const radius = parseInt(document.getElementById('radiusSlider').value, 10);
+                    const t0 = performance.now();
 
                     try {
                         const res = await fetch('{{ route("cooling-points.fetch") }}', {
@@ -234,6 +242,19 @@
                         if (!res.ok) throw new Error('HTTP ' + res.status);
 
                         const data = await res.json();
+                        console.log(`⏱️ Fetch en ${(performance.now() - t0).toFixed(0)} ms`);
+
+                        if (Array.isArray(data.types) && data.types.length) {
+                            TYPES = data.types;
+                            ICONS  = {};
+                            COLORS = {};
+                            TYPES.forEach(t => {
+                                ICONS[t.slug]  = t.icon  || 'fa-map-marker-alt';
+                                COLORS[t.slug] = t.color || '#858796';
+                            });
+                            buildFilterButtons();
+                        }
+
                         const list = Array.isArray(data) ? data : (data.points ?? []);
 
                         allPoints = list
@@ -251,7 +272,6 @@
                             .sort((a, b) => a.distance - b.distance);
 
                         console.log('Points reçus :', allPoints.length);
-
                         applyFilters();
                         updateStats();
                     } catch (e) {
@@ -262,26 +282,68 @@
                     }
                 }
 
+                // ---- Filtres dynamiques ----
+                function buildFilterButtons() {
+                    const group = document.getElementById('filterGroup');
+                    if (!group) return;
+
+                    Array.from(group.querySelectorAll('.filter-btn')).forEach(b => {
+                        if (b.dataset.filter !== 'all') b.remove();
+                    });
+
+                    TYPES.forEach(t => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-outline-primary filter-btn';
+                        btn.dataset.filter = t.slug;
+                        btn.innerHTML = `<i class="fas ${t.icon || 'fa-map-marker-alt'} fa-sm mr-1"></i>${escapeHtml(t.name)}`;
+                        group.appendChild(btn);
+                    });
+
+                    attachFilterEvents();
+                }
+
+                function attachFilterEvents() {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        if (b.dataset.bound === '1') return;
+                        b.dataset.bound = '1';
+                        b.addEventListener('click', () => {
+                            document.querySelectorAll('.filter-btn').forEach(x => {
+                                x.classList.remove('btn-primary');
+                                x.classList.add('btn-outline-primary');
+                            });
+                            b.classList.remove('btn-outline-primary');
+                            b.classList.add('btn-primary');
+                            currentFilter = b.dataset.filter;
+                            applyFilters();
+                        });
+                    });
+                }
 
                 // ---- Filtres ----
                 function applyFilters() {
                     const s = currentSearch.toLowerCase();
                     filteredPoints = allPoints.filter(p =>
                         (currentFilter === 'all' || p.type === currentFilter) &&
-                        (!s || p.name.toLowerCase().includes(s))
+                        (!s || (p.name || '').toLowerCase().includes(s))
                     );
                     renderMarkers();
                     renderList();
                 }
 
+                // ✅ Rendu via cluster (rapide + pas de freeze)
                 function renderMarkers() {
-                    if (!map) return;
-                    markers.forEach(m => map.removeLayer(m));
-                    markers = filteredPoints.map(p =>
-                        L.marker([p.latitude, p.longitude], { icon: iconFor(p.type) })
-                            .addTo(map)
-                            .bindPopup(`<b>${p.name}</b><br><small>${p.type} · ${p.distance.toFixed(2)} km</small>`)
-                    );
+                    if (!map || !clusterGroup) return;
+
+                    clusterGroup.clearLayers();
+
+                    const layers = filteredPoints.map(p => {
+                        const m = L.marker([p.latitude, p.longitude], { icon: iconFor(p.type) });
+                        m.bindPopup(buildPopup(p), { maxWidth: 260, minWidth: 220 });
+                        return m;
+                    });
+
+                    clusterGroup.addLayers(layers);   // addLayers = optimisé
                 }
 
                 function renderList() {
@@ -290,47 +352,94 @@
 
                     if (!filteredPoints.length) {
                         list.innerHTML = `<div class="text-center text-muted small p-4">
-                <i class="fas fa-map-marker-alt fa-2x d-block mb-2 text-gray-300"></i>
-                Aucun point trouvé
-            </div>`;
+                            <i class="fas fa-map-marker-alt fa-2x d-block mb-2 text-gray-300"></i>
+                            Aucun point trouvé
+                        </div>`;
                         return;
                     }
 
-                    list.innerHTML = filteredPoints.map((p, i) => `
-            <a href="#" class="d-block px-3 py-2 border-bottom text-decoration-none text-dark point-item" data-idx="${i}">
-                <div class="d-flex align-items-center">
-                    <span class="mr-2" style="font-size:18px">${ICONS[p.type] || '📍'}</span>
-                    <div class="flex-grow-1" style="min-width:0">
-                        <div class="font-weight-bold small text-truncate">${escapeHtml(p.name)}</div>
-                        <div class="text-muted" style="font-size:11px">
-                            ${p.distance.toFixed(2)} km · ${p.type}
-                        </div>
-                    </div>
-                </div>
-            </a>
-        `).join('');
+                    // Limiter à 100 items dans la liste (évite le lag DOM)
+                    const slice = filteredPoints.slice(0, 100);
+
+                    list.innerHTML = slice.map((p, i) => {
+                        const color = p.type_color || COLORS[p.type] || '#858796';
+                        const icon  = p.type_icon  || ICONS[p.type]  || 'fa-map-marker-alt';
+                        const name  = p.type_name  || p.type;
+
+                        return `<a href="#" class="d-block px-3 py-2 border-bottom text-decoration-none text-dark point-item" data-idx="${i}">
+                            <div class="d-flex align-items-center">
+                                <span class="mr-2" style="width:26px;height:26px;border-radius:50%;background:${color};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <i class="fas ${icon}" style="color:#fff;font-size:11px"></i>
+                                </span>
+                                <div class="flex-grow-1" style="min-width:0">
+                                    <div class="font-weight-bold small text-truncate">${escapeHtml(p.name)}</div>
+                                    <div class="text-muted" style="font-size:11px">
+                                        ${p.distance.toFixed(2)} km · ${escapeHtml(name)}
+                                    </div>
+                                </div>
+                            </div>
+                        </a>`;
+                    }).join('');
+
+                    if (filteredPoints.length > 100) {
+                        list.innerHTML += `<div class="text-center text-muted small p-2">
+                            ... ${filteredPoints.length - 100} autres points
+                        </div>`;
+                    }
 
                     list.querySelectorAll('.point-item').forEach(el => {
                         el.addEventListener('click', ev => {
                             ev.preventDefault();
                             const p = filteredPoints[el.dataset.idx];
                             map.setView([p.latitude, p.longitude], 16);
-                            if (markers[el.dataset.idx]) markers[el.dataset.idx].openPopup();
+                            // Ouvrir le popup du marqueur via le cluster
+                            clusterGroup.eachLayer(layer => {
+                                const ll = layer.getLatLng();
+                                if (ll.lat === p.latitude && ll.lng === p.longitude) {
+                                    layer.openPopup();
+                                }
+                            });
                         });
                     });
                 }
 
                 function escapeHtml(s) {
-                    return String(s).replace(/[&<>"']/g, c => (
+                    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
                         { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]
                     ));
                 }
 
                 function updateStats() {
-                    document.getElementById('statTotal').textContent     = allPoints.length;
-                    document.getElementById('statParks').textContent     = allPoints.filter(p => p.type === 'park').length;
-                    document.getElementById('statFountains').textContent = allPoints.filter(p => p.type === 'fountain').length;
-                    document.getElementById('statMalls').textContent     = allPoints.filter(p => p.type === 'mall').length;
+                    document.getElementById('statTotal').textContent = allPoints.length;
+
+                    const row = document.getElementById('statsRow');
+                    if (!row) return;
+                    row.querySelectorAll('[data-dynamic-stat]').forEach(el => el.remove());
+
+                    const palette = ['success', 'info', 'warning', 'danger', 'dark'];
+                    TYPES.forEach((t, i) => {
+                        const count = allPoints.filter(p => p.type === t.slug).length;
+                        const colorClass = palette[i % palette.length];
+                        const color = t.color || '#858796';
+                        const icon  = t.icon  || 'fa-map-marker-alt';
+
+                        const col = document.createElement('div');
+                        col.className = 'col-xl-3 col-md-6 mb-4';
+                        col.setAttribute('data-dynamic-stat', t.slug);
+                        col.innerHTML = `
+                            <div class="card border-left-${colorClass} shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-${colorClass} text-uppercase mb-1">${escapeHtml(t.name)}</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">${count}</div>
+                                        </div>
+                                        <div class="col-auto"><i class="fas ${icon} fa-2x" style="color:${color};opacity:.35"></i></div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        row.appendChild(col);
+                    });
                 }
 
                 function showLoader(on) {
@@ -344,24 +453,20 @@
                     const btn = document.getElementById('btnLocate');
                     if (btn) btn.addEventListener('click', locate);
 
+                    // ✅ Debounce sur la recherche (évite 1 recalcul par frappe)
                     const search = document.getElementById('searchInput');
-                    if (search) search.addEventListener('input', e => {
-                        currentSearch = e.target.value;
-                        applyFilters();
-                    });
-
-                    document.querySelectorAll('.filter-btn').forEach(b => {
-                        b.addEventListener('click', () => {
-                            document.querySelectorAll('.filter-btn').forEach(x => {
-                                x.classList.remove('btn-primary');
-                                x.classList.add('btn-outline-primary');
-                            });
-                            b.classList.remove('btn-outline-primary');
-                            b.classList.add('btn-primary');
-                            currentFilter = b.dataset.filter;
-                            applyFilters();
+                    if (search) {
+                        let t = null;
+                        search.addEventListener('input', e => {
+                            clearTimeout(t);
+                            t = setTimeout(() => {
+                                currentSearch = e.target.value;
+                                applyFilters();
+                            }, 250);
                         });
-                    });
+                    }
+
+                    attachFilterEvents();
 
                     const slider = document.getElementById('radiusSlider');
                     if (slider) {
@@ -374,12 +479,10 @@
                     }
                 }
 
-                // ---- Boot ----
                 function boot() {
                     console.log('🎬 Cooling points boot');
                     initMap();
                     bindEvents();
-                    // Auto-localisation au chargement
                     setTimeout(locate, 600);
                 }
 
