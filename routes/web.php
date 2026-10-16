@@ -42,7 +42,7 @@ use App\Http\Controllers\NotificationPreferenceController;
 
 // Équipements
 use App\Http\Controllers\EquipementC\Equipementc;
-
+use App\Http\Controllers\ReservationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,6 +58,14 @@ Route::get('/carte', [FrontOfficeController::class, 'map'])
 
 Route::get('/carte/data', [OutageController::class, 'map'])
     ->name('front.map.data');
+
+
+Route::get('/Equipements', [Equipementc::class, 'frontIndex'])
+    ->name('front.equipements');
+
+Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
+    ->name('front.equipements.reservations.store');
+
 
 
 /*
