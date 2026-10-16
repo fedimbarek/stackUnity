@@ -32,7 +32,7 @@ class CoolingPointService
                     'User-Agent' => 'HeatAlert/1.0 (contact@heatalert.tn)',
                     'Accept'     => 'application/json',
                 ])
-                    ->timeout(20)
+                    ->timeout(30)
                     ->retry(1, 1000, throw: false)
                     ->withOptions(['verify' => false]) // OK en local, à retirer en production
                     ->asForm()
