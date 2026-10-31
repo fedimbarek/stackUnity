@@ -2,9 +2,8 @@
     <div class="container">
         <a class="navbar-brand" href="{{ route('front.home') }}">
             <!-- <i class="fas fa-temperature-high"></i> -->
-              <img src="img/logo4.png" height="80">
+            <img src="{{ asset('img/logo4.png') }}" height="80">
             HeatAlert
-           
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#frontNav">
             <span class="navbar-toggler-icon"></span>
@@ -16,7 +15,7 @@
                 <li class="nav-item"><a class="nav-link" href="{{ route('front.map') }}">Carte en direct</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('front.equipements') }}">Equipement</a></li>
 
-                 <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('contacts.*') ? 'active' : '' }}" href="{{ route('contacts.index') }}">
                         <i class="fas fa-phone-alt me-1"></i> Urgences
                     </a>

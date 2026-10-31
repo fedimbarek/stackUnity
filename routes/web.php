@@ -66,6 +66,7 @@ Route::get('/Equipements', [Equipementc::class, 'frontIndex'])
 
 Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
     ->name('front.equipements.reservations.store');
+
 /*
 |--------------------------------------------------------------------------
 | DASHBOARD RÉSIDENT

@@ -9,6 +9,7 @@ use App\Observers\AuditObserver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +31,16 @@ class AppServiceProvider extends ServiceProvider
 
         // Pagination au style Bootstrap 4 (SB Admin 2)
         Paginator::useBootstrapFour();
+
+        // Assure la présence des rôles par défaut pour le guard web.
+        if (Schema::hasTable('roles')) {
+            foreach (['resident', 'gestionnaire', 'admin'] as $roleName) {
+                Role::firstOrCreate([
+                    'name' => $roleName,
+                    'guard_name' => 'web',
+                ]);
+            }
+        }
 
         // Journal d'audit
         User::observe(AuditObserver::class);
