@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\EquipementRequest;
 use App\Models\Equipement;
 use App\Services\EquipementService;
+use App\Services\TranslationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class Equipementc extends Controller
 {
@@ -88,6 +91,34 @@ class Equipementc extends Controller
         return redirect()
             ->route('admin.equipements.index')
             ->with('success', 'Équipement modifié avec succès.');
+    }
+    public function translate(
+        Request $request,
+        Equipement $equipement,
+        TranslationService $translationService
+    ): JsonResponse {
+        $validated = $request->validate([
+            'lang' => ['sometimes', 'string', 'in:en'],
+        ]);
+        $target = $validated['lang'] ?? 'en';
+
+        $nom = $translationService->translate($equipement->nom, 'fr', $target);
+        $type = $translationService->translate($equipement->type_equipement, 'fr', $target);
+
+        if ($nom === null || $type === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La traduction est temporairement indisponible.',
+            ], 503);
+        }
+
+        return response()->json([
+            'id' => $equipement->id,
+            'lang' => $target,
+            'success' => true,
+            'nom' => $nom,
+            'type_equipement' => $type,
+        ]);
     }
 
     public function destroy(Equipement $equipement): RedirectResponse

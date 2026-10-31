@@ -48,14 +48,20 @@
                         </div>
                     @endif
 
-                    <div class="card-body">
-                        <h3 class="card-title h5">{{ $equipement->nom }}</h3>
-                        <p class="card-text text-muted">{{ $equipement->type_equipement }}</p>
-                        <p class="mb-1 fw-bold">{{ number_format($equipement->prix_louer, 2) }} DT</p>
-                        <small class="text-muted">
-                            Ajouté le {{ \Illuminate\Support\Carbon::parse($equipement->date_ajout)->format('d/m/Y') }}
-                        </small>
-                    </div>
+                   <div class="card-body" data-translate-card>
+    <h3 class="card-title h5" data-field="nom">{{ $equipement->nom }}</h3>
+    <p class="card-text text-muted" data-field="type">{{ $equipement->type_equipement }}</p>
+    <p class="mb-1 fw-bold">{{ number_format($equipement->prix_louer, 2) }} DT</p>
+    <small class="text-muted d-block">
+        Ajouté le {{ \Illuminate\Support\Carbon::parse($equipement->date_ajout)->format('d/m/Y') }}
+    </small>
+
+    <button type="button"
+            class="btn btn-outline-secondary btn-sm mt-2 js-translate"
+            data-url="{{ route('api.equipements.translate', $equipement) }}">
+        Traduire en anglais
+    </button>
+</div>
                     @if ($equipement->etat === 'reserve')
                         <div class="card-body pt-0">
                             <button type="button" class="btn btn-secondary" disabled aria-disabled="true">
@@ -107,4 +113,50 @@
         @endforelse
     </div>
 </section>
+
+<script>
+document.querySelectorAll('.js-translate').forEach((btn) => {
+    const card = btn.closest('[data-translate-card]');
+    const nom  = card.querySelector('[data-field="nom"]');
+    const type = card.querySelector('[data-field="type"]');
+    const original = { nom: nom.textContent, type: type.textContent };
+    const labelTranslate = 'Traduire en anglais';
+    const labelOriginal  = "Voir l'original";
+
+    let translated = null;
+    let showingTranslation = false;
+
+    btn.addEventListener('click', async () => {
+        if (showingTranslation) {
+            nom.textContent  = original.nom;
+            type.textContent = original.type;
+            btn.textContent  = labelTranslate;
+            showingTranslation = false;
+            return;
+        }
+
+        if (!translated) {
+            btn.disabled = true;
+            btn.textContent = 'Traduction…';
+            try {
+                const res = await fetch(btn.dataset.url + '?lang=en', {
+                    headers: { 'Accept': 'application/json' },
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                translated = await res.json();
+            } catch (e) {
+                btn.textContent = 'Échec, réessayer';
+                btn.disabled = false;
+                return;
+            }
+            btn.disabled = false;
+        }
+
+        nom.textContent  = translated.nom;
+        type.textContent = translated.type_equipement;
+        btn.textContent  = labelOriginal;
+        showingTranslation = true;
+    });
+});
+</script>
 @endsection

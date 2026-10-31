@@ -50,6 +50,8 @@ use App\Http\Controllers\TwoFactorController;
 | FRONT OFFICE (public)
 |--------------------------------------------------------------------------
 */
+Route::get('/equipements/{equipement}/translate', [Equipementc::class, 'translate'])
+    ->name('api.equipements.translate');
 
 Route::get('/', [FrontOfficeController::class, 'home'])
     ->name('front.home');
