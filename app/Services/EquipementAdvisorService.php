@@ -13,7 +13,9 @@ use Illuminate\Support\Str;
 
 class EquipementAdvisorService
 {
-    public function recommend(string $besoin): array
+    public function __construct(private TranslationService $translationService) {}
+
+    public function recommend(string $besoin, string $lang = 'fr'): array
     {
         $besoin = trim(mb_substr(strip_tags($besoin), 0, 500));
         $equipements = Equipement::query()
@@ -36,28 +38,44 @@ class EquipementAdvisorService
             'image' => $equipement->image,
         ])->all();
         $inventoryHash = hash('sha256', json_encode($cacheInventory, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-        $cacheKey = 'equipement-advisor:'.hash('sha256', hash('sha256', $besoin).$inventoryHash);
+        $cacheKey = 'equipement-advisor:'.hash('sha256', hash('sha256', $besoin).$lang.$inventoryHash);
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($besoin, $equipements, $inventory) {
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($besoin, $lang, $equipements, $inventory) {
             $context = $this->weatherContext();
             $recommendations = $this->recommendWithAi($besoin, $inventory, $context);
 
             if ($recommendations === null) {
-                return $this->buildResponse(
-                    $this->recommendByRules($besoin, $equipements, $context),
-                    $equipements,
-                    $this->fallbackAdvice($context),
-                    'regles'
-                );
+                $recommendations = $this->recommendByRules($besoin, $equipements, $context);
+                $advice = $this->fallbackAdvice($context);
+                $source = 'regles';
+            } else {
+                $advice = $recommendations['conseil'];
+                $recommendations = $recommendations['recommandations'];
+                $source = 'ia';
             }
 
+            $recommendations = array_map(function (array $recommendation) use ($lang) {
+                $recommendation['raison'] = $this->translateGeneratedText($recommendation['raison'], $lang);
+
+                return $recommendation;
+            }, $recommendations);
+
             return $this->buildResponse(
-                $recommendations['recommandations'],
+                $recommendations,
                 $equipements,
-                $recommendations['conseil'],
-                'ia'
+                $this->translateGeneratedText($advice, $lang),
+                $source
             );
         });
+    }
+
+    private function translateGeneratedText(string $text, string $lang): string
+    {
+        if ($lang === 'fr') {
+            return $text;
+        }
+
+        return $this->translationService->translate($text, 'fr', $lang) ?? $text;
     }
 
     private function weatherContext(): array

@@ -54,6 +54,10 @@ Route::post('/equipements/recommander', [Equipementc::class, 'recommander'])
     ->middleware('throttle:10,1')
     ->name('front.equipements.recommander');
 
+Route::get('/equipements/translations', [Equipementc::class, 'translations'])
+    ->middleware('throttle:20,1')
+    ->name('front.equipements.translations');
+
 Route::get('/equipements/{equipement}/translate', [Equipementc::class, 'translate'])
     ->name('api.equipements.translate');
 

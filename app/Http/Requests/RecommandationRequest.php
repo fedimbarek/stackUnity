@@ -24,6 +24,7 @@ class RecommandationRequest extends FormRequest
     {
         return [
             'besoin' => ['required', 'string', 'min:5', 'max:500'],
+            'lang' => ['sometimes', 'string', 'in:fr,en,ar,es'],
         ];
     }
 

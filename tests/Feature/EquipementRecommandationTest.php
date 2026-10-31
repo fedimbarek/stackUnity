@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Equipement;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -114,6 +115,43 @@ class EquipementRecommandationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('source', 'regles')
             ->assertJsonPath('recommandations.0.nom', 'Lampe de secours');
+    }
+
+    public function test_requested_language_is_used_for_ai_reason_and_advice(): void
+    {
+        $equipement = Equipement::factory()->create([
+            'etat' => 'disponible',
+        ]);
+
+        Http::fake([
+            '*generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => [
+                        'parts' => [[
+                            'text' => json_encode([
+                                'recommandations' => [
+                                    ['id' => $equipement->id, 'raison' => 'Raison de recommandation'],
+                                ],
+                                'conseil' => 'Conseil de prévention',
+                            ], JSON_UNESCAPED_UNICODE),
+                        ]],
+                    ],
+                ]],
+            ]),
+            '*libretranslate.de/translate' => function (Request $request) {
+                return Http::response([
+                    'translatedText' => 'AR '.$request->data()['q'],
+                ]);
+            },
+        ]);
+
+        $this->postJson(route('front.equipements.recommander'), [
+            'besoin' => 'Je cherche un équipement',
+            'lang' => 'ar',
+        ])
+            ->assertOk()
+            ->assertJsonPath('recommandations.0.raison', 'AR Raison de recommandation')
+            ->assertJsonPath('conseil', 'AR Conseil de prévention');
     }
 
     public function test_empty_or_overlong_need_is_rejected(): void
