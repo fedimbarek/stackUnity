@@ -8,30 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('equipements', function (Blueprint $table) {
-            $table->string('etat')->default('disponible');
-        });
+        if (! Schema::hasColumn('equipements', 'etat')) {
+            Schema::table('equipements', function (Blueprint $table) {
+                $table->string('etat')->default('disponible');
+            });
+        }
 
-        Schema::create('reservations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('equipement_id')->constrained('equipements')->cascadeOnDelete();
-            $table->string('nom');
-            $table->string('prenom');
-            $table->string('email');
-            $table->string('numero', 30);
-            $table->date('date_debut');
-            $table->date('date_fin');
-            $table->timestamp('confirmee_at')->nullable();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('reservations')) {
+            Schema::create('reservations', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('equipement_id')->constrained('equipements')->cascadeOnDelete();
+                $table->string('nom');
+                $table->string('prenom');
+                $table->string('email');
+                $table->string('numero', 30);
+                $table->date('date_debut');
+                $table->date('date_fin');
+                $table->timestamp('confirmee_at')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('reservations');
-
-        Schema::table('equipements', function (Blueprint $table) {
-            $table->dropColumn('etat');
-        });
+        // Rien à défaire ici : ces objets sont déjà gérés par les 2 migrations du 2026_10_06.
     }
 };

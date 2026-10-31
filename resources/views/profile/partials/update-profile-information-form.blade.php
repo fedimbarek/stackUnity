@@ -3,9 +3,25 @@
 
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">@csrf</form>
 
-    <form method="post" action="{{ route('profile.update') }}">
+    <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data">
         @csrf
         @method('patch')
+
+        <div class="form-group">
+            <label for="photo">Photo de profil</label><br>
+            <img src="{{ $user->profile_photo_url }}" alt="Photo de profil" class="rounded-circle mb-2"
+                 style="width:80px;height:80px;object-fit:cover">
+            <input id="photo" name="photo" type="file" accept="image/*"
+                   class="form-control-file @error('photo') is-invalid @enderror">
+            @error('photo') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+
+            @if ($user->profile_photo_path)
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" name="remove_photo" value="1" id="remove_photo">
+                    <label class="form-check-label small" for="remove_photo">Supprimer ma photo</label>
+                </div>
+            @endif
+        </div>
 
         <div class="form-group">
             <label for="name">Nom complet</label>
