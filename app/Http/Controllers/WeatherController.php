@@ -6,7 +6,6 @@ use App\Models\WeatherAlert;
 use App\Models\WeatherForecast;
 use App\Services\AdviceService;
 use App\Services\WeatherService;
-use App\Services\HeatRiskScoreService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +29,7 @@ class WeatherController extends Controller
     /**
      * Page « Prévisions canicule ».
      */
-    public function index(HeatRiskScoreService $riskScore, WeatherService $weather)
+    public function index()
     {
         $neighborhoodId = auth()->user()->neighborhood_id;
 
@@ -48,8 +47,7 @@ class WeatherController extends Controller
         );
 
         return view('weather.index', [
-            'forecasts' => $forecasts,
-            'riskScores' => $riskScores,
+            'forecasts' => $this->upcoming(),
             'alerts'    => $alerts,
         ]);
     }
