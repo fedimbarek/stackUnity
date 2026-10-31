@@ -40,6 +40,12 @@ class WeatherController extends Controller
             ->take(5)
             ->get();
 
+        $forecasts = $this->upcoming();
+        $thresholds = $weather->thresholds();
+        $riskScores = $forecasts->groupBy('neighborhood_id')->map(
+            fn ($items) => $riskScore->calculate($items, $thresholds['warning'], $thresholds['canicule'])
+        );
+
         return view('weather.index', [
             'forecasts' => $this->upcoming(),
             'alerts'    => $alerts,
