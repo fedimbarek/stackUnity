@@ -4,7 +4,9 @@ namespace App\Http\Controllers\EquipementC;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EquipementRequest;
+use App\Http\Requests\RecommandationRequest;
 use App\Models\Equipement;
+use App\Services\EquipementAdvisorService;
 use App\Services\EquipementService;
 use App\Services\TranslationService;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +37,13 @@ class Equipementc extends Controller
         $equipements = $this->service->getAll();
 
         return view('Equipement.FrontEquipement', compact('equipements'));
+    }
+
+    public function recommander(
+        RecommandationRequest $request,
+        EquipementAdvisorService $advisor
+    ): JsonResponse {
+        return response()->json($advisor->recommend($request->validated('besoin')));
     }
 
     public function reservations(Equipement $equipement): View

@@ -31,7 +31,6 @@ class EquipementTranslationTest extends TestCase
             ->andReturn('Accommodation');
 
         $request = Request::create('/equipements/4/translate', 'GET', ['lang' => 'en']);
-        $request->setContainer($this->app);
 
         $response = (new Equipementc(Mockery::mock(EquipementService::class)))
             ->translate($request, $equipement, $translator);
@@ -56,7 +55,6 @@ class EquipementTranslationTest extends TestCase
         $translator->shouldReceive('translate')->twice()->andReturn(null);
 
         $request = Request::create('/equipements/1/translate', 'GET');
-        $request->setContainer($this->app);
 
         $response = (new Equipementc(Mockery::mock(EquipementService::class)))
             ->translate($request, $equipement, $translator);

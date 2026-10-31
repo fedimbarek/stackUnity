@@ -28,20 +28,54 @@
             </div>
         @endif
 
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h3 class="h5 card-title">Que me conseillez-vous&nbsp;?</h3>
+                <p class="text-muted">Décrivez votre situation pour recevoir des recommandations adaptées à la météo et aux équipements disponibles.</p>
+                <form id="equipement-advisor-form"
+                      action="{{ route('front.equipements.recommander') }}"
+                      method="POST"
+                      data-url="{{ route('front.equipements.recommander') }}">
+                    @csrf
+                    <label for="equipement-besoin" class="form-label">Votre besoin</label>
+                    <textarea id="equipement-besoin"
+                              name="besoin"
+                              class="form-control"
+                              rows="3"
+                              minlength="5"
+                              maxlength="500"
+                              required
+                              placeholder="Ex. famille de 5 personnes, coupure d’eau demain, 42 °C"></textarea>
+                    <button id="equipement-advisor-submit" type="submit" class="btn btn-primary mt-3">
+                        Obtenir une recommandation
+                    </button>
+                </form>
+                <div id="equipement-advisor-error" class="alert alert-danger mt-3 mb-0" role="alert" hidden></div>
+                <div id="equipement-advisor-results" class="mt-4" aria-live="polite"></div>
+            </div>
+        </div>
+
         @forelse ($equipements as $equipement)
             @if ($loop->first)
                 <div class="row g-4">
             @endif
 
             <div class="col-md-6 col-lg-4">
-                <article class="card h-100 shadow-sm">
+                <article id="equipement-card-{{ $equipement->id }}" class="card h-100 shadow-sm">
                     @if ($equipement->image)
-                        <img
-                            src="{{ asset('storage/' . $equipement->image) }}"
-                            class="card-img-top"
-                            alt="{{ $equipement->nom }}"
-                            style="height: 220px; object-fit: cover;"
-                        >
+                        <a href="{{ asset('storage/' . $equipement->image) }}"
+                           target="_blank"
+                           rel="noopener"
+                           aria-label="Voir l’image de {{ $equipement->nom }} en grand">
+                            <img
+                                src="{{ asset('storage/' . $equipement->image) }}"
+                                class="card-img-top"
+                                alt="{{ $equipement->nom }}"
+                                title="Cliquer pour voir l’image en grand"
+                                style="height: 220px; object-fit: cover;"
+                            >
+                            <span class="d-block text-center small py-1">Voir l’image en grand</span>
+                        </a>
                     @else
                         <div class="d-flex align-items-center justify-content-center bg-light text-muted" style="height: 220px;">
                             Aucune image disponible
@@ -69,7 +103,7 @@
                             </button>
                         </div>
                     @else
-                        <details class="card-body pt-0" @if ($errors->any()) open @endif>
+                        <details id="reservation-form-{{ $equipement->id }}" class="card-body pt-0" @if ($errors->any()) open @endif>
                             <summary class="btn btn-primary">Réserver</summary>
                             <form action="{{ route('front.equipements.reservations.store', $equipement) }}" method="POST" class="mt-3">
                                 @csrf
@@ -157,6 +191,146 @@ document.querySelectorAll('.js-translate').forEach((btn) => {
         btn.textContent  = labelOriginal;
         showingTranslation = true;
     });
+});
+
+const advisorForm = document.getElementById('equipement-advisor-form');
+
+advisorForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const submitButton = document.getElementById('equipement-advisor-submit');
+    const errorBox = document.getElementById('equipement-advisor-error');
+    const results = document.getElementById('equipement-advisor-results');
+    const originalLabel = 'Obtenir une recommandation';
+
+    errorBox.hidden = true;
+    errorBox.textContent = '';
+    results.replaceChildren();
+    submitButton.disabled = true;
+    submitButton.textContent = 'Analyse en cours…';
+
+    try {
+        const formData = new FormData(advisorForm);
+        const response = await fetch(advisorForm.dataset.url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': formData.get('_token'),
+            },
+            body: formData,
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            const firstValidationError = data.errors
+                ? Object.values(data.errors)[0]?.[0]
+                : null;
+            throw new Error(firstValidationError || data.message || 'Impossible d’obtenir une recommandation.');
+        }
+
+        const heading = document.createElement('h4');
+        heading.className = 'h6';
+        heading.textContent = data.source === 'ia'
+            ? 'Recommandations de l’assistant IA'
+            : 'Recommandations par règles de prévention';
+        results.appendChild(heading);
+
+        if (data.conseil) {
+            const advice = document.createElement('p');
+            advice.className = 'text-muted';
+            advice.textContent = data.conseil;
+            results.appendChild(advice);
+        }
+
+        if (!data.recommandations || data.recommandations.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'mb-0';
+            empty.textContent = 'Aucun équipement disponible ne correspond à ce besoin pour le moment.';
+            results.appendChild(empty);
+            return;
+        }
+
+        const row = document.createElement('div');
+        row.className = 'row g-3';
+
+        data.recommandations.forEach((item) => {
+            const column = document.createElement('div');
+            column.className = 'col-md-6 col-lg-4';
+
+            const card = document.createElement('article');
+            card.className = 'card h-100';
+
+            if (item.image) {
+                const image = document.createElement('img');
+                image.src = item.image;
+                image.alt = item.nom;
+                image.className = 'card-img-top';
+                image.style.height = '180px';
+                image.style.objectFit = 'cover';
+                card.appendChild(image);
+            }
+
+            const body = document.createElement('div');
+            body.className = 'card-body';
+
+            const name = document.createElement('h5');
+            name.className = 'card-title h6';
+            name.textContent = item.nom;
+
+            const type = document.createElement('p');
+            type.className = 'card-text text-muted mb-1';
+            type.textContent = item.type_equipement;
+
+            const price = document.createElement('p');
+            price.className = 'fw-bold';
+            price.textContent = `${Number(item.prix_louer).toFixed(2)} DT`;
+
+            const reason = document.createElement('p');
+            reason.className = 'card-text';
+            reason.textContent = item.raison;
+
+            const reserve = document.createElement('a');
+            reserve.className = 'btn btn-primary';
+            reserve.href = item.url;
+            reserve.textContent = 'Réserver';
+            reserve.dataset.equipementCard = `equipement-card-${item.id}`;
+
+            body.append(name, type, price, reason, reserve);
+            card.appendChild(body);
+            column.appendChild(card);
+            row.appendChild(column);
+        });
+
+        results.appendChild(row);
+    } catch (error) {
+        errorBox.textContent = error.message || 'Une erreur est survenue. Veuillez réessayer.';
+        errorBox.hidden = false;
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = originalLabel;
+    }
+});
+
+document.getElementById('equipement-advisor-results').addEventListener('click', (event) => {
+    const link = event.target.closest('[data-equipement-card]');
+
+    if (!link) {
+        return;
+    }
+
+    const target = document.getElementById(link.dataset.equipementCard);
+
+    if (target) {
+        event.preventDefault();
+        const reservationForm = target.querySelector('details');
+        if (reservationForm) {
+            reservationForm.open = true;
+            reservationForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        window.history.replaceState(null, '', link.href);
+    }
 });
 </script>
 @endsection

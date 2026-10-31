@@ -23,9 +23,16 @@
             {{-- Image à gauche --}}
             <div style="width:150px; min-height:150px; flex-shrink:0; background:#e5e7eb;">
                 @if ($equipement->image)
-                    <img src="{{ asset('storage/' . $equipement->image) }}"
-                         alt="{{ $equipement->nom }}"
-                         style="width:100%; height:100%; object-fit:cover;">
+                    <a href="{{ asset('storage/' . $equipement->image) }}"
+                       target="_blank"
+                       rel="noopener"
+                       aria-label="Voir l’image de {{ $equipement->nom }} en grand">
+                        <img src="{{ asset('storage/' . $equipement->image) }}"
+                             alt="{{ $equipement->nom }}"
+                             title="Cliquer pour voir l’image en grand"
+                             style="width:100%; height:150px; object-fit:cover;">
+                        <span style="display:block; text-align:center; font-size:12px; padding:4px;">Voir l’image en grand</span>
+                    </a>
                 @else
                     <div style="height:100%; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:12px;">
                         Pas d'image

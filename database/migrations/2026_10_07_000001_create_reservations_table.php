@@ -11,24 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('equipements', function (Blueprint $table) {
-            if (! Schema::hasColumn('equipements', 'etat')) {
+        if (! Schema::hasColumn('equipements', 'etat')) {
+            Schema::table('equipements', function (Blueprint $table) {
                 $table->string('etat')->default('disponible')->after('prix_louer');
-            }
-        });
+            });
+        }
 
-        Schema::create('reservations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('equipement_id')->constrained()->cascadeOnDelete();
-            $table->string('nom');
-            $table->string('prenom');
-            $table->string('email');
-            $table->string('numero');
-            $table->date('date_debut');
-            $table->date('date_fin');
-            $table->timestamp('confirmee_at')->nullable();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('reservations')) {
+            Schema::create('reservations', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('equipement_id')->constrained()->cascadeOnDelete();
+                $table->string('nom');
+                $table->string('prenom');
+                $table->string('email');
+                $table->string('numero');
+                $table->date('date_debut');
+                $table->date('date_fin');
+                $table->timestamp('confirmee_at')->nullable();
+                $table->timestamps();
+            });
+        } elseif (! Schema::hasColumn('reservations', 'confirmee_at')) {
+            Schema::table('reservations', function (Blueprint $table) {
+                $table->timestamp('confirmee_at')->nullable();
+            });
+        }
     }
 
     /**
@@ -36,12 +42,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('reservations');
-
-        Schema::table('equipements', function (Blueprint $table) {
-            if (Schema::hasColumn('equipements', 'etat')) {
-                $table->dropColumn('etat');
-            }
-        });
+        // These tables and columns are managed by earlier migrations.
     }
 };

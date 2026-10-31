@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Equipement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ReservationTest extends TestCase
@@ -47,8 +48,9 @@ class ReservationTest extends TestCase
             'date_fin' => now()->addDays(3)->toDateString(),
         ]);
 
+        $adminRole = Role::findOrCreate('admin', 'web');
         $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        $admin->assignRole($adminRole);
 
         $response = $this->actingAs($admin)
             ->get("/admin/equipements/{$equipement->id}/reservations");

@@ -50,6 +50,10 @@ use App\Http\Controllers\TwoFactorController;
 | FRONT OFFICE (public)
 |--------------------------------------------------------------------------
 */
+Route::post('/equipements/recommander', [Equipementc::class, 'recommander'])
+    ->middleware('throttle:10,1')
+    ->name('front.equipements.recommander');
+
 Route::get('/equipements/{equipement}/translate', [Equipementc::class, 'translate'])
     ->name('api.equipements.translate');
 
