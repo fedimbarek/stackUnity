@@ -28,6 +28,8 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'neighborhood_id' => ['required', 'exists:neighborhoods,id'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_photo' => ['nullable', 'boolean'],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Neighborhood;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -23,13 +24,15 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
-        $user = User::factory()->create();
+        $neighborhood = Neighborhood::factory()->create();
+        $user = User::factory()->create(['neighborhood_id' => $neighborhood->id]);
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
+                'neighborhood_id' => $neighborhood->id,
             ]);
 
         $response
@@ -45,13 +48,15 @@ class ProfileTest extends TestCase
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
-        $user = User::factory()->create();
+        $neighborhood = Neighborhood::factory()->create();
+        $user = User::factory()->create(['neighborhood_id' => $neighborhood->id]);
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => $user->email,
+                'neighborhood_id' => $neighborhood->id,
             ]);
 
         $response

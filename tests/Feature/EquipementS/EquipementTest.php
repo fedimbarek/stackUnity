@@ -232,34 +232,34 @@ class EquipementTest extends TestCase
         $this->assertDatabaseCount('reservations', 0);
     }
 
-    public function test_equipements_page_is_displayed(): void
+    private function managerUser(): User
     {
         $user = User::factory()->create();
+        $user->assignRole(Role::findOrCreate('gestionnaire', 'web'));
 
-        $response = $this
-            ->actingAs($user)
-            ->get('/equipements');
+        return $user;
+    }
 
-        $response->assertOk();
+    public function test_equipements_page_is_displayed(): void
+    {
+        $this->actingAs($this->managerUser())
+            ->get(route('admin.equipements.index'))
+            ->assertOk();
     }
 
     public function test_equipement_can_be_created(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->post('/equipements', [
+        $response = $this->actingAs($this->managerUser())
+            ->post(route('admin.equipements.store'), [
                 'nom' => 'Tente 4 places',
                 'type_equipement' => 'Camping',
                 'date_ajout' => '2026-09-28',
-                'image' => 'equipements/tente.jpg',
                 'prix_louer' => 45.50,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/equipements');
+            ->assertRedirect(route('admin.equipements.index'));
 
         $this->assertDatabaseHas('equipements', [
             'nom' => 'Tente 4 places',
@@ -270,22 +270,19 @@ class EquipementTest extends TestCase
 
     public function test_equipement_can_be_updated(): void
     {
-        $user = User::factory()->create();
         $equipement = Equipement::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->patch("/equipements/{$equipement->id}", [
+        $response = $this->actingAs($this->managerUser())
+            ->put(route('admin.equipements.update', $equipement), [
                 'nom' => 'Nouveau nom',
                 'type_equipement' => 'Sport',
                 'date_ajout' => '2026-09-28',
-                'image' => 'equipements/nouveau.jpg',
                 'prix_louer' => 99.99,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/equipements');
+            ->assertRedirect(route('admin.equipements.index'));
 
         $equipement->refresh();
 
@@ -296,35 +293,30 @@ class EquipementTest extends TestCase
 
     public function test_equipement_can_be_deleted(): void
     {
-        $user = User::factory()->create();
         $equipement = Equipement::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->delete("/equipements/{$equipement->id}");
+        $response = $this->actingAs($this->managerUser())
+            ->delete(route('admin.equipements.destroy', $equipement));
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/equipements');
+            ->assertRedirect(route('admin.equipements.index'));
 
         $this->assertNull($equipement->fresh());
     }
 
     public function test_nom_and_prix_louer_are_required(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->from('/equipements/create')
-            ->post('/equipements', [
+        $response = $this->actingAs($this->managerUser())
+            ->from(route('admin.equipements.create'))
+            ->post(route('admin.equipements.store'), [
                 'nom' => '',
                 'prix_louer' => '',
             ]);
 
         $response
             ->assertSessionHasErrors(['nom', 'prix_louer'])
-            ->assertRedirect('/equipements/create');
+            ->assertRedirect(route('admin.equipements.create'));
 
         $this->assertDatabaseCount('equipements', 0);
     }

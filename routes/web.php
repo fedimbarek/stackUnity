@@ -43,6 +43,7 @@ use App\Http\Controllers\NotificationPreferenceController;
 // Équipements
 use App\Http\Controllers\EquipementC\Equipementc;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\TwoFactorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,8 +66,6 @@ Route::get('/Equipements', [Equipementc::class, 'frontIndex'])
 
 Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
     ->name('front.equipements.reservations.store');
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -344,6 +343,35 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])
             ->name('equipements.destroy');
 
+        // Gestion des réservations d'un équipement
+        Route::get('/equipements/{equipement}/reservations', [Equipementc::class, 'reservations'])
+            ->name('equipements.reservations.index');
+
+        // Route::patch('/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
+            // ->name('equipements.reservations.confirm');
+        Route::match(['post', 'patch'], '/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
+            ->name('equipements.reservations.confirm');
+        Route::delete('/equipements/{equipement}/reservations/{reservation}', [ReservationController::class, 'destroy'])
+            ->name('equipements.reservations.destroy');
+
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTHENTIFICATION À DEUX FACTEURS (utilisateur connecté)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')
+    ->prefix('two-factor')
+    ->name('two-factor.')
+    ->group(function () {
+        Route::get('/', [TwoFactorController::class, 'show'])->name('show');
+        Route::post('/enable', [TwoFactorController::class, 'enable'])->name('enable');
+        Route::post('/confirm', [TwoFactorController::class, 'confirm'])->name('confirm');
+        Route::post('/recovery-codes', [TwoFactorController::class, 'regenerate'])->name('recovery');
+        Route::delete('/', [TwoFactorController::class, 'disable'])->name('disable');
     });
 
 
