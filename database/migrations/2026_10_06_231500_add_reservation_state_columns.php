@@ -8,23 +8,31 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('equipements', function (Blueprint $table) {
-            $table->string('etat')->default('disponible');
-        });
+        if (! Schema::hasColumn('equipements', 'etat')) {
+            Schema::table('equipements', function (Blueprint $table) {
+                $table->string('etat')->default('disponible');
+            });
+        }
 
-        Schema::table('reservations', function (Blueprint $table) {
-            $table->timestamp('confirmee_at')->nullable();
-        });
+        if (! Schema::hasColumn('reservations', 'confirmee_at')) {
+            Schema::table('reservations', function (Blueprint $table) {
+                $table->timestamp('confirmee_at')->nullable();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('reservations', function (Blueprint $table) {
-            $table->dropColumn('confirmee_at');
-        });
+        if (Schema::hasColumn('reservations', 'confirmee_at')) {
+            Schema::table('reservations', function (Blueprint $table) {
+                $table->dropColumn('confirmee_at');
+            });
+        }
 
-        Schema::table('equipements', function (Blueprint $table) {
-            $table->dropColumn('etat');
-        });
+        if (Schema::hasColumn('equipements', 'etat')) {
+            Schema::table('equipements', function (Blueprint $table) {
+                $table->dropColumn('etat');
+            });
+        }
     }
 };
