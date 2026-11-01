@@ -112,9 +112,10 @@ pipeline {
 
         stage('Tous les tests Laravel') {
             steps {
-                sh '''#!/bin/sh
+                sh '''
                     set -eu
-                    php artisan test --log-junit build/all-junit.xml
+                    php artisan config:clear
+                    APP_LOCALE=fr APP_FALLBACK_LOCALE=fr php artisan test --log-junit build/all-junit.xml
                 '''
             }
         }
