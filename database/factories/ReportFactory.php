@@ -17,7 +17,7 @@ class ReportFactory extends Factory
             'period_start' => $start,
             'period_end' => (clone $start)->modify('+6 days'),
             'neighborhood_id' => Neighborhood::inRandomOrder()->first()?->id,
-            'generated_by' => User::role('admin')->inRandomOrder()->first()?->id ?? User::factory(),
+            'generated_by' => User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->inRandomOrder()->first()?->id ?? User::factory(),
             'status' => fake()->randomElement(['generated', 'sent']),
         ];
     }
