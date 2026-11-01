@@ -1,0 +1,51 @@
+groups:
+  - name: monitoring-alerts
+    rules:
+      # Retirer {job!="laravel-app"} lorsque Laravel existe et doit être surveillé.
+      - alert: ServiceDown
+        expr: up{job!="laravel-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Le service {{ $labels.job }} est indisponible"
+
+      - alert: HighCPU
+        expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L'utilisation CPU dépasse 85 % sur {{ $labels.instance }}"
+
+      - alert: HighMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L'utilisation mémoire dépasse 90 % sur {{ $labels.instance }}"
+
+      - alert: DiskAlmostFull
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} < 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "L'espace disque libre est inférieur à 15 % sur {{ $labels.instance }} ({{ $labels.mountpoint }})"
+
+      - alert: ContainerRestarting
+        expr: changes(container_start_time_seconds[10m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Le conteneur {{ $labels.name }} a redémarré plus de 3 fois en 10 minutes"
+
+      - alert: HighHttp5xxRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Le taux de réponses HTTP 5xx de Laravel dépasse 5 %"

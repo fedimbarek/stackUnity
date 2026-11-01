@@ -16,6 +16,11 @@ class ReportMailer
             return false;
         }
 
+        if (! is_file($absoluteFilePath)) {
+            Log::warning('ReportMailer: pièce jointe introuvable pour le rapport #'.$report->id, ['path' => $absoluteFilePath]);
+            return false;
+        }
+
         try {
             Mail::send([], [], function ($message) use ($report, $recipientEmails, $absoluteFilePath) {
                 $message->to($recipientEmails)
