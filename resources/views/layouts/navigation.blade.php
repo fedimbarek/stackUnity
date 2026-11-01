@@ -136,6 +136,22 @@
                     Prévisions canicule
                 </a>
 
+                {{-- Assistant IA coupures (tous les connectés) --}}
+                <a class="collapse-item {{ request()->routeIs('ai.assistant*') ? 'active' : '' }}"
+                   href="{{ route('ai.assistant') }}">
+                    <i class="fas fa-robot fa-sm fa-fw mr-2"></i>
+                    Assistant IA
+                </a>
+
+                {{-- Quartiers à risque (admin + gestionnaire) --}}
+                @role('admin|gestionnaire')
+                    <a class="collapse-item {{ request()->routeIs('ai.risk') ? 'active' : '' }}"
+                       href="{{ route('ai.risk') }}">
+                        <i class="fas fa-exclamation-triangle fa-sm fa-fw mr-2"></i>
+                        Quartiers à risque
+                    </a>
+                @endrole
+
                 {{-- Gestion météo (admin + gestionnaire) --}}
                 @role('admin|gestionnaire')
 

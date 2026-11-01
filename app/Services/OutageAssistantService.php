@@ -49,7 +49,7 @@ class OutageAssistantService
             $last30 = PowerOutage::where('neighborhood_id', $n->id)
                 ->where('started_at', '>=', now()->subDays(30))->count();
             $temps = WeatherForecast::where('neighborhood_id', $n->id)
-                ->whereBetween('date', [today(), today()->addDays(3)])
+                ->whereBetween('date', [today()->toDateString(), today()->addDays(3)->toDateString()])
                 ->orderBy('date')->get()
                 ->map(fn ($f) => $f->date->format('d/m').' max '.$f->temp_max.'°C ('.$f->level.')')
                 ->implode(', ');
