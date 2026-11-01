@@ -3,10 +3,27 @@ services:
     build: .
     container_name: jenkins-laravel
     ports:
-      - "8090:8080"
-      - "50000:50000"
+      - '9090:8080'
     volumes:
       - jenkins_home:/var/jenkins_home
+    depends_on:
+      mysql:
+        condition: service_healthy
     restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: heatalert_test
+      MYSQL_USER: heatalert_ci
+      MYSQL_PASSWORD: ci-local-only-change-me
+      MYSQL_ROOT_PASSWORD: ci-root-local-only-change-me
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h localhost -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
 volumes:
   jenkins_home:
