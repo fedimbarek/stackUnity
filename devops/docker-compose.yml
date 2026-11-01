@@ -1,8 +1,13 @@
 
 services:
   jenkins:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+      
     container_name: jenkins-laravel
+
+    user: root
 
     ports:
       - "9090:8080"
@@ -10,6 +15,7 @@ services:
 
     volumes:
       - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
 
     depends_on:
       mysql:
@@ -19,6 +25,7 @@ services:
 
   mysql:
     image: mysql:8.0
+
     container_name: heatalert-mysql
 
     ports:
