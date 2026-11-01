@@ -24,6 +24,8 @@ class UserNotificationController extends Controller
      */
     public function read(string $id)
     {
+        abort_unless(\Illuminate\Support\Str::isUuid($id), 404);
+
         auth()->user()
             ->notifications()
             ->where('id', $id)
