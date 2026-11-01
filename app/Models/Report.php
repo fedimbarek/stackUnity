@@ -13,6 +13,7 @@ class Report extends Model
     protected $fillable = [
         'title', 'period_start', 'period_end', 'neighborhood_id',
         'generated_by', 'file_path', 'status', 'sent_at',
+        'ai_summary', 'ai_generated_at',
     ];
 
     protected function casts(): array
@@ -21,6 +22,7 @@ class Report extends Model
             'period_start' => 'date',
             'period_end' => 'date',
             'sent_at' => 'datetime',
+            'ai_generated_at' => 'datetime',
         ];
     }
 

@@ -1,3 +1,4 @@
+
 <?php
 
 namespace Tests\Feature;
@@ -13,10 +14,12 @@ class ProfileTest extends TestCase
 
     private function createUserWithNeighborhood(): User
     {
-        $quartier = Neighborhood::factory()->create();
+        // Créer un quartier
+        $neighborhood = Neighborhood::factory()->create();
 
+        // Créer un utilisateur associé au quartier
         return User::factory()->create([
-            'neighborhood_id' => $quartier->id,
+            'neighborhood_id' => $neighborhood->id,
         ]);
     }
 

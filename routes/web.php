@@ -42,8 +42,12 @@ use App\Http\Controllers\NotificationPreferenceController;
 
 // Équipements
 use App\Http\Controllers\EquipementC\Equipementc;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\NeighborhoodRiskController;
+use App\Http\Controllers\OutageAssistantController;
 
-
+use App\Http\Controllers\ReportInsightController;
 /*
 |--------------------------------------------------------------------------
 | FRONT OFFICE (public)
@@ -59,6 +63,12 @@ Route::get('/carte', [FrontOfficeController::class, 'map'])
 Route::get('/carte/data', [OutageController::class, 'map'])
     ->name('front.map.data');
 
+
+Route::get('/Equipements', [Equipementc::class, 'frontIndex'])
+    ->name('front.equipements');
+
+Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
+    ->name('front.equipements.reservations.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -336,6 +346,35 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])
             ->name('equipements.destroy');
 
+        // Gestion des réservations d'un équipement
+        Route::get('/equipements/{equipement}/reservations', [Equipementc::class, 'reservations'])
+            ->name('equipements.reservations.index');
+
+        // Route::patch('/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
+            // ->name('equipements.reservations.confirm');
+        Route::match(['post', 'patch'], '/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
+            ->name('equipements.reservations.confirm');
+        Route::delete('/equipements/{equipement}/reservations/{reservation}', [ReservationController::class, 'destroy'])
+            ->name('equipements.reservations.destroy');
+
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTHENTIFICATION À DEUX FACTEURS (utilisateur connecté)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')
+    ->prefix('two-factor')
+    ->name('two-factor.')
+    ->group(function () {
+        Route::get('/', [TwoFactorController::class, 'show'])->name('show');
+        Route::post('/enable', [TwoFactorController::class, 'enable'])->name('enable');
+        Route::post('/confirm', [TwoFactorController::class, 'confirm'])->name('confirm');
+        Route::post('/recovery-codes', [TwoFactorController::class, 'regenerate'])->name('recovery');
+        Route::delete('/', [TwoFactorController::class, 'disable'])->name('disable');
     });
 
 
@@ -470,8 +509,40 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         Route::resource('contact-categories', ContactCategoryController::class)->except('show');
 
     });
+// Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+    // Route::get('/risk-scores', [NeighborhoodRiskController::class, 'index'])->name('ai.risk');
+// });
+
+// Route::middleware('auth')->group(function () {
+    // Route::get('/assistant', [OutageAssistantController::class, 'index'])->name('ai.assistant');
+    // Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
+        // ->middleware('throttle:10,1')
+        // ->name('ai.assistant.ask');
+// });
 
 
+/*
+|--------------------------------------------------------------------------
+| IA : assistant, risque par quartier, résumé de rapport
+|--------------------------------------------------------------------------
+*/
+
+// Assistant chat (tout utilisateur connecté)
+Route::middleware('auth')->group(function () {
+    Route::get('/assistant', [OutageAssistantController::class, 'index'])->name('ai.assistant');
+    Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
+        ->middleware('throttle:10,1')
+        ->name('ai.assistant.ask');
+});
+
+// Admin + gestionnaire
+Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+    Route::get('/risk-scores', [NeighborhoodRiskController::class, 'index'])->name('ai.risk');
+
+    Route::post('/reports/{report}/insight', [ReportInsightController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('reports.insight');
+});
 /*
 |--------------------------------------------------------------------------
 | AUTHENTIFICATION

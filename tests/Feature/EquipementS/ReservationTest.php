@@ -19,7 +19,7 @@ class ReservationTest extends TestCase
         $this->get(route('front.equipements'))
             ->assertOk()
             ->assertSee(route('front.equipements.reservations.store', $equipement), false)
-            ->assertSee('Demander la réservation');
+            ->assertSee('Envoyer la demande');
     }
 
     public function test_public_reservation_request_is_created(): void
@@ -62,7 +62,10 @@ class ReservationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.equipements.reservations.index', $equipement))
             ->assertOk()
-            ->assertSee('Alice Dupont');
+            // ->assertSee('Alice Dupont');
+             ->assertSee('Dupont')
+            ->assertSee('Alice')
+            ->assertSee('alice@example.com');
 
         $this->patch(route('admin.equipements.reservations.confirm', [$equipement, $reservation]))
             ->assertRedirect(route('admin.equipements.reservations.index', $equipement));

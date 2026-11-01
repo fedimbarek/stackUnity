@@ -56,6 +56,10 @@
                        style="padding:6px 10px; border-radius:4px; background:#2563eb; color:white; font-size:12px; text-decoration:none;">
                         Modifier
                     </a>
+                    <a href="{{ route('admin.equipements.reservations.index', $equipement) }}"
+                       style="padding:6px 10px; border-radius:4px; background:#4f46e5; color:white; font-size:12px; text-decoration:none;">
+                        Voir les demandes
+                    </a>
                     <form action="{{ route('admin.equipements.destroy', $equipement) }}" method="POST"
                           onsubmit="return confirm('Supprimer cet équipement ?')">
                         @csrf
