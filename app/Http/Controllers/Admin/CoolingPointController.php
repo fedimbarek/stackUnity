@@ -6,13 +6,35 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoolingPointRequest;
 use App\Models\CoolingPoint;
 use App\Models\CoolingPointType;
+use Illuminate\Http\Request;
 
 class CoolingPointController extends Controller
 {
-    public function index()
+    // ── ✨ INDEX AMÉLIORÉ : stats + filtres + pagination ──
+    public function index(Request $request)
     {
-        $points = CoolingPoint::with('coolingPointType')->paginate(10);
-        return view('admin.cooling-points.index', compact('points'));
+        $query = CoolingPoint::with('coolingPointType');
+
+        // Filtre par nom
+        if ($search = trim((string) $request->input('search'))) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        // Filtre par type
+        if ($typeId = $request->input('type_id')) {
+            $query->where('cooling_point_type_id', $typeId);
+        }
+
+        $points = $query->latest('id')->paginate(15);
+
+        // Types pour le <select> et les stats
+        $types = CoolingPointType::orderBy('name')->get();
+
+        $typesStats = CoolingPointType::withCount('coolingPoints as points_count')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.cooling-points.index', compact('points', 'types', 'typesStats'));
     }
 
     public function create()
@@ -23,7 +45,15 @@ class CoolingPointController extends Controller
 
     public function store(StoreCoolingPointRequest $request)
     {
-        CoolingPoint::create($request->validated() + ['source' => 'manual']);
+        $point = CoolingPoint::create($request->validated() + ['source' => 'manual']);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'point'   => $point->load('coolingPointType'),
+            ], 201);
+        }
+
         return redirect()->route('admin.cooling-points.index')->with('success', 'Point créé.');
     }
 

@@ -43,9 +43,9 @@
                         </div>
                         <label class="small text-muted d-flex justify-content-between mb-1">
                             <span>Rayon de recherche</span>
-                            <strong class="text-primary" id="radiusLabel">2 km</strong>
+                            <strong class="text-primary" id="radiusLabel">5 km</strong>
                         </label>
-                        <input type="range" class="custom-range" id="radiusSlider" min="500" max="10000" step="500" value="2000">
+                        <input type="range" class="custom-range" id="radiusSlider" min="500" max="10000" step="500" value="5000">
                     </div>
                 </div>
 
@@ -65,13 +65,34 @@
 
             {{-- Carte --}}
             <div class="col-lg-8 mb-4">
+
+                {{-- Barre d'outils au-dessus de la carte --}}
+                <div class="card shadow mb-3">
+                    <div class="card-body py-2">
+                        <div class="d-flex align-items-center flex-wrap">
+
+                            @role('admin')
+                            <button id="btnAddPoint" class="btn btn-success btn-sm mr-2 mb-1">
+                                <i class="fas fa-plus"></i> Ajouter un point ici
+                            </button>
+                            <span class="border-left pl-3 ml-1 mb-1"></span>
+                            @endrole
+
+                            <div class="btn-group btn-group-sm mb-1 flex-wrap" role="group" id="filterGroupMap">
+                                <button type="button" class="btn btn-primary filter-btn" data-filter="all">Tous</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Carte --}}
                 <div class="card shadow">
                     <div class="card-body p-0 position-relative">
                         <div id="cooling-map" style="height:650px;border-radius:.35rem"></div>
                         <div id="mapLoader" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.85);align-items:center;justify-content:center;border-radius:.35rem">
                             <div class="text-center">
                                 <div class="spinner-border text-primary"></div>
-                                <p class="mt-2 small text-muted mb-0">Recherche des points...</p>
+                                <p class="mt-2 small text-muted mb-0">Chargement des points...</p>
                             </div>
                         </div>
                     </div>
@@ -80,26 +101,81 @@
         </div>
     </div>
 
+    @role('admin')
+    {{-- Modal : ajouter un point depuis la carte --}}
+    <div class="modal fade" id="addPointModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle text-success"></i> Ajouter un point</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Type <span class="text-danger">*</span></label>
+                        <select id="addType" class="form-control">
+                            @foreach(\App\Models\CoolingPointType::orderBy('name')->get() as $t)
+                                <option value="{{ $t->id }}">{{ $t->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom <span class="text-danger">*</span></label>
+                        <input type="text" id="addName" class="form-control" value="Point de fraîcheur">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Latitude</label>
+                            <input type="text" id="addLatDisplay" class="form-control" readonly>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Longitude</label>
+                            <input type="text" id="addLngDisplay" class="form-control" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Adresse</label>
+                        <input type="text" id="addAddress" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Horaires</label>
+                        <input type="text" id="addHours" class="form-control" placeholder="08:00-20:00">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                    <button type="button" id="addPointSave" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endrole
+
     @push('scripts')
-        {{-- Leaflet --}}
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-        {{-- ✅ MarkerCluster : regroupement automatique des marqueurs --}}
         <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
         <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
         <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+        {{-- ✅ Évite l'erreur VSCode "Decorators are not valid here" --}}
+        <script>
+            window.IS_ADMIN = @json(auth()->check() && auth()->user()->hasRole('admin'));
+        </script>
 
         <script>
             (function () {
                 'use strict';
 
+                // ── État global ────────────────────────────
                 let ICONS  = {};
                 let COLORS = {};
                 let TYPES  = [];
 
                 let map = null;
-                let clusterGroup = null;    // ✅ remplace markers[]
+                let clusterGroup = null;
                 let userMarker = null;
                 let userPos = null;
                 let allPoints = [];
@@ -107,11 +183,13 @@
                 let currentFilter = 'all';
                 let currentSearch = '';
 
-                // ---- Init carte ----
+                // ✅ Marker reference par ID (O(1) au clic)
+                const markerById = new Map();
+
+                // ── Init carte ─────────────────────────────
                 function initMap() {
                     const el = document.getElementById('cooling-map');
-                    if (!el || typeof L === 'undefined') return;
-                    if (map) return;
+                    if (!el || typeof L === 'undefined' || map) return;
 
                     map = L.map(el).setView([36.8065, 10.1815], 13);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -119,22 +197,19 @@
                         maxZoom: 19
                     }).addTo(map);
 
-                    // ✅ Cluster group
                     clusterGroup = L.markerClusterGroup({
                         maxClusterRadius: 60,
                         showCoverageOnHover: false,
                         spiderfyOnMaxZoom: true,
                         disableClusteringAtZoom: 16,
-                        chunkedLoading: true,       // ✅ rendu progressif = pas de freeze
+                        chunkedLoading: true,
                         chunkInterval: 100,
                         chunkDelay: 30
                     });
                     map.addLayer(clusterGroup);
-
-                    console.log('✅ Carte + cluster initialisés');
                 }
 
-                // ---- Icône (petite = plus rapide) ----
+                // ── Icône ──────────────────────────────────
                 function iconFor(type) {
                     const c = COLORS[type] || '#858796';
                     const i = ICONS[type]  || 'fa-map-marker-alt';
@@ -149,11 +224,12 @@
                     });
                 }
 
-                // ---- Popup détaillé ----
+                // ── Popup ──────────────────────────────────
                 function buildPopup(p) {
                     const color = p.type_color || COLORS[p.type] || '#858796';
                     const label = p.type_name  || p.type;
-                    const addr  = p.address
+
+                    const addr = p.address
                         ? `<div style="margin-top:4px"><i class="fas fa-map-marker-alt" style="color:#999"></i> ${escapeHtml(p.address)}</div>`
                         : '';
                     const hours = p.opening_hours
@@ -161,10 +237,16 @@
                         : '';
                     const routeUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}`;
 
+                    const aiBadge = (p.ai_score !== null && p.ai_score !== undefined)
+                        ? `<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:10px;background:${p.ai_rank <= 3 ? '#1cc88a' : '#858796'};color:#fff;font-size:10px;font-weight:700" title="Score IA">
+                             ${p.ai_rank <= 3 ? '⭐' : 'IA'} ${(p.ai_score * 100).toFixed(0)}%
+                           </span>`
+                        : '';
+
                     return `
                     <div style="min-width:200px;font-family:inherit">
                         <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:#333">
-                            ${escapeHtml(p.name)}
+                            ${escapeHtml(p.name)} ${aiBadge}
                         </div>
                         <span style="display:inline-block;padding:2px 10px;border-radius:12px;background:${color};color:#fff;font-size:11px;font-weight:600">
                             <i class="fas ${p.type_icon || ''}"></i> ${escapeHtml(label)}
@@ -180,7 +262,7 @@
                     </div>`;
                 }
 
-                // ---- Haversine ----
+                // ── Haversine ──────────────────────────────
                 function haversine(lat1, lon1, lat2, lon2) {
                     const R = 6371;
                     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -191,38 +273,38 @@
                     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                 }
 
-                // ---- Localiser ----
+                // ── Marqueur "vous êtes ici" ───────────────
+                function addUserMarker() {
+                    if (!map || !userPos) return;
+                    if (userMarker) map.removeLayer(userMarker);
+                    userMarker = L.circleMarker([userPos.lat, userPos.lng], {
+                        radius: 8, color: '#4e73df', fillColor: '#4e73df',
+                        fillOpacity: 1, weight: 3
+                    }).addTo(map).bindPopup('📍 Vous êtes ici');
+                    map.setView([userPos.lat, userPos.lng], 14);
+                }
+
+                // ── Géoloc ─────────────────────────────────
                 function locate() {
-                    if (!navigator.geolocation) {
-                        alert('Géolocalisation non supportée par votre navigateur');
-                        return;
-                    }
+                    if (!navigator.geolocation) return;
                     showLoader(true);
                     navigator.geolocation.getCurrentPosition(
                         pos => {
                             userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                            localStorage.setItem('heatalert_userPos', JSON.stringify(userPos));
                             initMap();
-                            if (!map) { showLoader(false); return; }
-
-                            if (userMarker) map.removeLayer(userMarker);
-                            userMarker = L.circleMarker([userPos.lat, userPos.lng], {
-                                radius: 8, color: '#4e73df', fillColor: '#4e73df',
-                                fillOpacity: 1, weight: 3
-                            }).addTo(map).bindPopup('📍 Vous êtes ici');
-                            map.setView([userPos.lat, userPos.lng], 14);
-
+                            addUserMarker();
                             fetchPoints();
                         },
-                        err => {
-                            console.error(err);
+                        () => {
                             showLoader(false);
-                            alert('Localisation refusée ou indisponible');
+                            console.warn('Géoloc refusée — on garde la position par défaut');
                         },
-                        { enableHighAccuracy: true, timeout: 10000 }
+                        { enableHighAccuracy: true, timeout: 8000 }
                     );
                 }
 
-                // ---- Charger les points ----
+                // ── Fetch ──────────────────────────────────
                 async function fetchPoints() {
                     if (!userPos) return;
                     showLoader(true);
@@ -257,47 +339,49 @@
 
                         const list = Array.isArray(data) ? data : (data.points ?? []);
 
-                        allPoints = list
-                            .map(p => {
-                                const latitude  = parseFloat(p.latitude);
-                                const longitude = parseFloat(p.longitude);
-                                return {
-                                    ...p,
-                                    latitude,
-                                    longitude,
-                                    distance: haversine(userPos.lat, userPos.lng, latitude, longitude)
-                                };
-                            })
-                            .filter(p => p.distance <= radius / 1000)
-                            .sort((a, b) => a.distance - b.distance);
+                        allPoints = list.map(p => {
+                            const lat = parseFloat(p.latitude);
+                            const lng = parseFloat(p.longitude);
+                            return {
+                                ...p,
+                                latitude: lat,
+                                longitude: lng,
+                                distance: haversine(userPos.lat, userPos.lng, lat, lng)
+                            };
+                        })
+                        .filter(p => p.distance <= radius / 1000)
+                        .sort((a, b) => a.distance - b.distance);
 
                         console.log('Points reçus :', allPoints.length);
                         applyFilters();
                         updateStats();
                     } catch (e) {
                         console.error('Erreur fetch:', e);
-                        alert('Impossible de charger les points. Vérifiez la connexion.');
                     } finally {
                         showLoader(false);
                     }
                 }
 
-                // ---- Filtres dynamiques ----
+                // ── Filtres ────────────────────────────────
                 function buildFilterButtons() {
-                    const group = document.getElementById('filterGroup');
-                    if (!group) return;
+                    const groups = [
+                        document.getElementById('filterGroup'),
+                        document.getElementById('filterGroupMap'),
+                    ].filter(Boolean);
 
-                    Array.from(group.querySelectorAll('.filter-btn')).forEach(b => {
-                        if (b.dataset.filter !== 'all') b.remove();
-                    });
+                    groups.forEach(group => {
+                        Array.from(group.querySelectorAll('.filter-btn')).forEach(b => {
+                            if (b.dataset.filter !== 'all') b.remove();
+                        });
 
-                    TYPES.forEach(t => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'btn btn-outline-primary filter-btn';
-                        btn.dataset.filter = t.slug;
-                        btn.innerHTML = `<i class="fas ${t.icon || 'fa-map-marker-alt'} fa-sm mr-1"></i>${escapeHtml(t.name)}`;
-                        group.appendChild(btn);
+                        TYPES.forEach(t => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'btn btn-outline-primary filter-btn';
+                            btn.dataset.filter = t.slug;
+                            btn.innerHTML = `<i class="fas ${t.icon || 'fa-map-marker-alt'} fa-sm mr-1"></i>${escapeHtml(t.name)}`;
+                            group.appendChild(btn);
+                        });
                     });
 
                     attachFilterEvents();
@@ -320,7 +404,6 @@
                     });
                 }
 
-                // ---- Filtres ----
                 function applyFilters() {
                     const s = currentSearch.toLowerCase();
                     filteredPoints = allPoints.filter(p =>
@@ -331,21 +414,24 @@
                     renderList();
                 }
 
-                // ✅ Rendu via cluster (rapide + pas de freeze)
+                // ── Rendu marqueurs ────────────────────────
                 function renderMarkers() {
                     if (!map || !clusterGroup) return;
 
                     clusterGroup.clearLayers();
+                    markerById.clear();
 
                     const layers = filteredPoints.map(p => {
                         const m = L.marker([p.latitude, p.longitude], { icon: iconFor(p.type) });
                         m.bindPopup(buildPopup(p), { maxWidth: 260, minWidth: 220 });
+                        markerById.set(p.id, m);
                         return m;
                     });
 
-                    clusterGroup.addLayers(layers);   // addLayers = optimisé
+                    clusterGroup.addLayers(layers);
                 }
 
+                // ── Rendu liste (1 seul listener via délégation) ──
                 function renderList() {
                     const list = document.getElementById('pointsList');
                     document.getElementById('resultCount').textContent = filteredPoints.length;
@@ -358,7 +444,6 @@
                         return;
                     }
 
-                    // Limiter à 100 items dans la liste (évite le lag DOM)
                     const slice = filteredPoints.slice(0, 100);
 
                     list.innerHTML = slice.map((p, i) => {
@@ -366,13 +451,20 @@
                         const icon  = p.type_icon  || ICONS[p.type]  || 'fa-map-marker-alt';
                         const name  = p.type_name  || p.type;
 
-                        return `<a href="#" class="d-block px-3 py-2 border-bottom text-decoration-none text-dark point-item" data-idx="${i}">
+                        const isRec = p.ai_rank && p.ai_rank <= 3;
+                        const aiBadge = (p.ai_score !== null && p.ai_score !== undefined)
+                            ? `<span class="badge badge-${isRec ? 'success' : 'secondary'} ml-1" style="font-size:9px" title="Score IA: ${(p.ai_score * 100).toFixed(0)}%">
+                                 ${isRec ? '⭐' : 'IA'} ${(p.ai_score * 100).toFixed(0)}%
+                               </span>`
+                            : '';
+
+                        return `<a href="#" class="d-block px-3 py-2 border-bottom text-decoration-none text-dark point-item" data-id="${p.id}">
                             <div class="d-flex align-items-center">
                                 <span class="mr-2" style="width:26px;height:26px;border-radius:50%;background:${color};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
                                     <i class="fas ${icon}" style="color:#fff;font-size:11px"></i>
                                 </span>
                                 <div class="flex-grow-1" style="min-width:0">
-                                    <div class="font-weight-bold small text-truncate">${escapeHtml(p.name)}</div>
+                                    <div class="font-weight-bold small text-truncate">${escapeHtml(p.name)} ${aiBadge}</div>
                                     <div class="text-muted" style="font-size:11px">
                                         ${p.distance.toFixed(2)} km · ${escapeHtml(name)}
                                     </div>
@@ -382,36 +474,38 @@
                     }).join('');
 
                     if (filteredPoints.length > 100) {
-                        list.innerHTML += `<div class="text-center text-muted small p-2">
-                            ... ${filteredPoints.length - 100} autres points
-                        </div>`;
+                        list.innerHTML += `<div class="text-center text-muted small p-2">... ${filteredPoints.length - 100} autres points</div>`;
                     }
+                }
 
-                    list.querySelectorAll('.point-item').forEach(el => {
-                        el.addEventListener('click', ev => {
-                            ev.preventDefault();
-                            const p = filteredPoints[el.dataset.idx];
-                            map.setView([p.latitude, p.longitude], 16);
-                            // Ouvrir le popup du marqueur via le cluster
-                            clusterGroup.eachLayer(layer => {
-                                const ll = layer.getLatLng();
-                                if (ll.lat === p.latitude && ll.lng === p.longitude) {
-                                    layer.openPopup();
-                                }
-                            });
-                        });
+                // ✅ 1 seul listener pour TOUS les items (délégation)
+                function bindListClick() {
+                    const list = document.getElementById('pointsList');
+                    if (!list || list.dataset.bound === '1') return;
+                    list.dataset.bound = '1';
+
+                    list.addEventListener('click', e => {
+                        const item = e.target.closest('.point-item');
+                        if (!item) return;
+                        e.preventDefault();
+
+                        const id = parseInt(item.dataset.id, 10);
+                        const marker = markerById.get(id);
+                        if (!marker) return;
+
+                        // ✅ API officielle MarkerCluster : gère les clusters + zoom auto
+                        if (clusterGroup.zoomToShowLayer) {
+                            clusterGroup.zoomToShowLayer(marker, () => marker.openPopup());
+                        } else {
+                            map.setView(marker.getLatLng(), 16);
+                            marker.openPopup();
+                        }
                     });
                 }
 
-                function escapeHtml(s) {
-                    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
-                        { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]
-                    ));
-                }
-
+                // ── Stats ──────────────────────────────────
                 function updateStats() {
                     document.getElementById('statTotal').textContent = allPoints.length;
-
                     const row = document.getElementById('statsRow');
                     if (!row) return;
                     row.querySelectorAll('[data-dynamic-stat]').forEach(el => el.remove());
@@ -444,16 +538,146 @@
 
                 function showLoader(on) {
                     const el = document.getElementById('mapLoader');
-                    if (!el) return;
-                    el.style.display = on ? 'flex' : 'none';
+                    if (el) el.style.display = on ? 'flex' : 'none';
                 }
 
-                // ---- Événements ----
-                function bindEvents() {
-                    const btn = document.getElementById('btnLocate');
-                    if (btn) btn.addEventListener('click', locate);
+                // ── Admin : ajout depuis la carte ──────────
+                let addMode = false;
+                let pendingLat = 0, pendingLng = 0;
+                let adminBound = false;
 
-                    // ✅ Debounce sur la recherche (évite 1 recalcul par frappe)
+                function toggleAddMode() {
+                    addMode = !addMode;
+                    const btn = document.getElementById('btnAddPoint');
+                    const mapEl = document.getElementById('cooling-map');
+                    if (!btn) return;
+
+                    if (addMode) {
+                        btn.classList.replace('btn-success', 'btn-warning');
+                        btn.innerHTML = '<i class="fas fa-times"></i> Annuler l\'ajout';
+                        mapEl.style.cursor = 'crosshair';
+                    } else {
+                        btn.classList.replace('btn-warning', 'btn-success');
+                        btn.innerHTML = '<i class="fas fa-plus"></i> Ajouter un point ici';
+                        mapEl.style.cursor = '';
+                    }
+                }
+
+                function bindAdminAdd() {
+                    if (!window.IS_ADMIN || adminBound || !map) return;
+                    adminBound = true;
+
+                    const btn = document.getElementById('btnAddPoint');
+                    if (btn) btn.addEventListener('click', toggleAddMode);
+
+                    map.on('click', (e) => {
+                        if (!addMode) return;
+                        pendingLat = e.latlng.lat;
+                        pendingLng = e.latlng.lng;
+                        document.getElementById('addLatDisplay').value = pendingLat.toFixed(7);
+                        document.getElementById('addLngDisplay').value = pendingLng.toFixed(7);
+                        $('#addPointModal').modal('show');
+                    });
+
+                    document.getElementById('addPointSave')?.addEventListener('click', saveNewPoint);
+                }
+
+                async function saveNewPoint() {
+                    const payload = {
+                        cooling_point_type_id: parseInt(document.getElementById('addType').value, 10),
+                        name: document.getElementById('addName').value.trim() || 'Point de fraîcheur',
+                        latitude: pendingLat,
+                        longitude: pendingLng,
+                        address: document.getElementById('addAddress').value.trim() || null,
+                        opening_hours: document.getElementById('addHours').value.trim() || null,
+                    };
+
+                    const saveBtn = document.getElementById('addPointSave');
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
+
+                    try {
+                        const res = await fetch('{{ route("admin.cooling-points.store") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.message || ('HTTP ' + res.status));
+
+                        $('#addPointModal').modal('hide');
+                        document.getElementById('addName').value = 'Point de fraîcheur';
+                        document.getElementById('addAddress').value = '';
+                        document.getElementById('addHours').value = '';
+
+                        if (addMode) toggleAddMode();
+
+                        // ✅ AJOUT LOCAL — pas de re-fetch, instantané
+                        appendNewPoint(json.point);
+
+                        showToast('✅ Point ajouté !');
+
+                    } catch (e) {
+                        alert('Erreur : ' + e.message);
+                    } finally {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Enregistrer';
+                    }
+                }
+
+                // ✅ Ajoute le point localement sans re-fetch
+                function appendNewPoint(raw) {
+                    const type = raw.cooling_point_type || {};
+                    const lat = parseFloat(raw.latitude);
+                    const lng = parseFloat(raw.longitude);
+
+                    const p = {
+                        id: raw.id,
+                        name: raw.name,
+                        latitude: lat,
+                        longitude: lng,
+                        address: raw.address || null,
+                        opening_hours: raw.opening_hours || null,
+                        type: type.slug || 'other',
+                        type_name: type.name || 'Autre',
+                        type_icon: type.icon || 'fa-map-marker-alt',
+                        type_color: type.color || '#858796',
+                        ai_score: null,
+                        ai_rank: null,
+                        distance: haversine(userPos.lat, userPos.lng, lat, lng),
+                    };
+
+                    allPoints.push(p);
+                    allPoints.sort((a, b) => a.distance - b.distance);
+                    applyFilters();
+                    updateStats();
+                }
+
+                function showToast(msg) {
+                    const toast = document.createElement('div');
+                    toast.className = 'position-fixed bg-success text-white px-3 py-2 rounded shadow';
+                    toast.style.cssText = 'bottom:20px;right:20px;z-index:9999';
+                    toast.textContent = msg;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2500);
+                }
+
+                // ── Utils ──────────────────────────────────
+                function escapeHtml(s) {
+                    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+                        { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]
+                    ));
+                }
+
+                // ── Events globaux ─────────────────────────
+                function bindEvents() {
+                    document.getElementById('btnLocate')?.addEventListener('click', locate);
+
                     const search = document.getElementById('searchInput');
                     if (search) {
                         let t = null;
@@ -479,11 +703,36 @@
                     }
                 }
 
+                // ── BOOT ───────────────────────────────────
                 function boot() {
-                    console.log('🎬 Cooling points boot');
+                    console.log('🎬 Cooling points boot — admin:', window.IS_ADMIN);
                     initMap();
                     bindEvents();
-                    setTimeout(locate, 600);
+                    bindListClick();
+                    bindAdminAdd();
+
+                    // 1. Position sauvegardée ?
+                    const saved = localStorage.getItem('heatalert_userPos');
+                    if (saved) {
+                        try {
+                            userPos = JSON.parse(saved);
+                            if (userPos && userPos.lat && userPos.lng) {
+                                console.log('📍 Position restaurée:', userPos);
+                                addUserMarker();
+                                fetchPoints();
+                                return;
+                            }
+                        } catch (e) {}
+                    }
+
+                    // 2. Position par défaut
+                    userPos = { lat: 36.8065, lng: 10.1815 };
+                    console.log('📍 Position par défaut : Tunis centre');
+                    addUserMarker();
+                    fetchPoints();
+
+                    // 3. Géoloc en arrière-plan
+                    setTimeout(locate, 300);
                 }
 
                 if (document.readyState === 'loading') {

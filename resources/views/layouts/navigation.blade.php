@@ -38,7 +38,7 @@
                 <span>Utilisateurs</span>
             </a>
         </li>
-
+<!-- 
         {{-- Gestion des points de fraîcheur --}}
         <li class="nav-item {{ request()->routeIs('admin.cooling-points.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.cooling-points.index') }}">
@@ -52,7 +52,7 @@
                 <i class="fas fa-fw fa-tags"></i>
                 <span>Types de points</span>
             </a>
-        </li>
+        </li> -->
 
     @endrole
 
@@ -70,15 +70,64 @@
         </a>
     </li>
 
-    {{-- Points de fraîcheur (tous les rôles) --}}
-    @hasanyrole('admin|gestionnaire|resident')
-        <li class="nav-item {{ request()->routeIs('cooling-points.*') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('cooling-points.index') }}">
-                <i class="fas fa-fw fa-snowflake"></i>
-                <span>Points de Fraîcheur</span>
-            </a>
-        </li>
-    @endhasanyrole
+{{-- Points de fraîcheur (collapsible : tous voient la carte, admin gère) --}}
+@hasanyrole('admin|gestionnaire|resident')
+
+    @php
+        $coolingOpen =
+            request()->routeIs('cooling-points.*') ||
+            request()->routeIs('admin.cooling-points.*') ||
+            request()->routeIs('admin.cooling-point-types.*');
+    @endphp
+
+    <li class="nav-item {{ $coolingOpen ? 'active' : '' }}">
+
+        <a class="nav-link {{ $coolingOpen ? '' : 'collapsed' }}"
+           href="#collapseCooling"
+           data-toggle="collapse"
+           role="button"
+           aria-expanded="{{ $coolingOpen ? 'true' : 'false' }}"
+           aria-controls="collapseCooling">
+
+            <i class="fas fa-fw fa-snowflake"></i>
+            <span>Points de Fraîcheur</span>
+            <i class="fas fa-angle-down float-right mt-1"></i>
+
+        </a>
+
+        <div id="collapseCooling"
+             class="collapse {{ $coolingOpen ? 'show' : '' }}"
+             data-parent="#accordionSidebar">
+
+            <div class="py-2 collapse-inner rounded">
+
+                {{-- 🗺️ Carte (tous les rôles) --}}
+                <a class="collapse-item {{ request()->routeIs('cooling-points.*') ? 'active' : '' }}"
+                   href="{{ route('cooling-points.index') }}">
+                    <i class="fas fa-map-marked-alt fa-sm fa-fw mr-2"></i>
+                    Voir la carte
+                </a>
+
+                {{-- 🛠️ Gestion (admin uniquement) --}}
+                @role('admin')
+                    <a class="collapse-item {{ request()->routeIs('admin.cooling-points.*') ? 'active' : '' }}"
+                       href="{{ route('admin.cooling-points.index') }}">
+                        <i class="fas fa-edit fa-sm fa-fw mr-2"></i>
+                        Gérer les points
+                    </a>
+
+                    <a class="collapse-item {{ request()->routeIs('admin.cooling-point-types.*') ? 'active' : '' }}"
+                       href="{{ route('admin.cooling-point-types.index') }}">
+                        <i class="fas fa-tags fa-sm fa-fw mr-2"></i>
+                        Types de points
+                    </a>
+                @endrole
+
+            </div>
+        </div>
+    </li>
+
+@endhasanyrole
 
 
     {{-- MENU MÉTÉO --}}
