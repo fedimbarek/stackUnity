@@ -1,4 +1,3 @@
-
 <?php
 
 namespace Tests\Feature\Auth;
@@ -21,13 +20,13 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
-        // Initialiser les rôles existants
+        // Initialiser les rôles du projet
         $this->seed(RoleSeeder::class);
 
         // Garantir la présence du rôle resident
         Role::findOrCreate('resident', 'web');
 
-        // Créer un quartier
+        // Créer un quartier pour l'utilisateur
         $neighborhood = Neighborhood::factory()->create();
 
         // Envoyer le formulaire d'inscription
@@ -39,7 +38,7 @@ class RegistrationTest extends TestCase
             'neighborhood_id' => $neighborhood->id,
         ]);
 
-        // Vérifier la validation
+        // Vérifier l'absence d'erreurs de validation
         $response->assertSessionHasNoErrors();
 
         // Vérifier l'enregistrement en base
@@ -52,13 +51,13 @@ class RegistrationTest extends TestCase
         $user = User::where('email', 'test@example.com')
             ->firstOrFail();
 
-        // Vérifier le rôle
+        // Vérifier le rôle attribué
         $this->assertTrue($user->hasRole('resident'));
 
-        // Vérifier la connexion
+        // Vérifier que l'utilisateur est connecté
         $this->assertAuthenticatedAs($user);
 
-        // Vérifier la redirection
+        // Vérifier la redirection vers le dashboard
         $response->assertRedirect(route('dashboard'));
     }
 }
