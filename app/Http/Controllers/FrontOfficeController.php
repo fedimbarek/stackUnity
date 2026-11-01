@@ -15,7 +15,9 @@ class FrontOfficeController extends Controller
             'neighborhoods' => Neighborhood::count(),
             'outages_tracked' => PowerOutage::count(),
             'outages_resolved' => PowerOutage::where('status', 'resolved')->count(),
-            'residents' => User::role('resident')->count(),
+            'residents' => \Spatie\Permission\Models\Role::findByName('resident', 'web')
+            ->users()
+            ->count(),
         ];
         $priorityContacts = EmergencyContact::active()
         ->where('is_priority', true)
