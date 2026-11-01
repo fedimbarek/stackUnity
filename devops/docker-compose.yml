@@ -1,28 +1,66 @@
+
 services:
   jenkins:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+      
     container_name: jenkins-laravel
+
+    user: root
+
     ports:
+<<<<<<< HEAD
       - "8081:8080"        # Jenkins sur localhost:8081
+=======
+      - "9090:8080"
+>>>>>>> origin/main
       - "50000:50000"
+
     volumes:
       - jenkins_home:/var/jenkins_home
+<<<<<<< HEAD
       - /var/run/docker.sock:/var/run/docker.sock   # pour lancer des conteneurs depuis le pipeline
+=======
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+>>>>>>> origin/main
     restart: unless-stopped
 
   mysql:
     image: mysql:8.0
+
     container_name: heatalert-mysql
+
     ports:
       - "3307:3306"
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: heatalert
-      MYSQL_USER: heatalert
-      MYSQL_PASSWORD: heatalert
+      MYSQL_DATABASE: heatalert_test
+      MYSQL_USER: heatalert_ci
+      MYSQL_PASSWORD: ci-local-only-change-me
+
     volumes:
       - mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'mysqladmin ping -h localhost -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
     restart: unless-stopped
+<<<<<<< HEAD
 
   sonarqube:
     image: sonarqube:community
@@ -51,11 +89,16 @@ services:
     volumes:
       - postgresql_data:/var/lib/postgresql/data
     restart: unless-stopped
+=======
+>>>>>>> origin/main
 
 volumes:
   jenkins_home:
   mysql_data:
+<<<<<<< HEAD
   sonarqube_data:
   sonarqube_logs:
   sonarqube_extensions:
   postgresql_data:
+=======
+>>>>>>> origin/main

@@ -31,9 +31,12 @@ use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\FrontOfficeController;
 use App\Http\Controllers\NeighborhoodController;
+use App\Http\Controllers\NeighborhoodRiskController;
+use App\Http\Controllers\OutageAssistantController;
 use App\Http\Controllers\OutageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportInsightController;
 use App\Http\Controllers\CoolingPointController;
 use App\Http\Controllers\EmergencyContactController;
 use App\Http\Controllers\WeatherController;
@@ -44,15 +47,22 @@ use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\EquipementC\Equipementc;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\TwoFactorController;
-use App\Http\Controllers\NeighborhoodRiskController;
-use App\Http\Controllers\OutageAssistantController;
 
-use App\Http\Controllers\ReportInsightController;
 /*
 |--------------------------------------------------------------------------
 | FRONT OFFICE (public)
 |--------------------------------------------------------------------------
 */
+Route::post('/equipements/recommander', [Equipementc::class, 'recommander'])
+    ->middleware('throttle:10,1')
+    ->name('front.equipements.recommander');
+
+Route::get('/equipements/translations', [Equipementc::class, 'translations'])
+    ->middleware('throttle:20,1')
+    ->name('front.equipements.translations');
+
+Route::get('/equipements/{equipement}/translate', [Equipementc::class, 'translate'])
+    ->name('api.equipements.translate');
 
 Route::get('/', [FrontOfficeController::class, 'home'])
     ->name('front.home');
@@ -181,6 +191,10 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
     Route::post('/reports/{report}/send', [ReportController::class, 'send'])
         ->name('reports.send');
+
+    // Résumé IA (Gemini, avec repli sans clé API)
+    Route::post('/reports/{report}/insight', [ReportInsightController::class, 'store'])
+        ->name('reports.insight');
 
     Route::resource('reports', ReportController::class);
 
@@ -366,6 +380,36 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
 
 /*
 |--------------------------------------------------------------------------
+| IA : assistant coupures + classement des quartiers à risque
+|--------------------------------------------------------------------------
+*/
+
+// Assistant : tous les utilisateurs connectés (10 questions / minute)
+Route::middleware('auth')
+    ->prefix('ai')
+    ->name('ai.')
+    ->group(function () {
+
+        Route::get('/assistant', [OutageAssistantController::class, 'index'])
+            ->name('assistant');
+
+        Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
+            ->middleware('throttle:10,1')
+            ->name('assistant.ask');
+
+    });
+
+// Classement des quartiers à risque : admin + gestionnaire
+Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+
+    Route::get('/ai/risque', [NeighborhoodRiskController::class, 'index'])
+        ->name('ai.risk');
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
 | AUTHENTIFICATION À DEUX FACTEURS (utilisateur connecté)
 |--------------------------------------------------------------------------
 */
@@ -513,40 +557,8 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         Route::resource('contact-categories', ContactCategoryController::class)->except('show');
 
     });
-// Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
-    // Route::get('/risk-scores', [NeighborhoodRiskController::class, 'index'])->name('ai.risk');
-// });
-
-// Route::middleware('auth')->group(function () {
-    // Route::get('/assistant', [OutageAssistantController::class, 'index'])->name('ai.assistant');
-    // Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
-        // ->middleware('throttle:10,1')
-        // ->name('ai.assistant.ask');
-// });
 
 
-/*
-|--------------------------------------------------------------------------
-| IA : assistant, risque par quartier, résumé de rapport
-|--------------------------------------------------------------------------
-*/
-
-// Assistant chat (tout utilisateur connecté)
-Route::middleware('auth')->group(function () {
-    Route::get('/assistant', [OutageAssistantController::class, 'index'])->name('ai.assistant');
-    Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
-        ->middleware('throttle:10,1')
-        ->name('ai.assistant.ask');
-});
-
-// Admin + gestionnaire
-Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
-    Route::get('/risk-scores', [NeighborhoodRiskController::class, 'index'])->name('ai.risk');
-
-    Route::post('/reports/{report}/insight', [ReportInsightController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('reports.insight');
-});
 /*
 |--------------------------------------------------------------------------
 | AUTHENTIFICATION

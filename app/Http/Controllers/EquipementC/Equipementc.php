@@ -4,24 +4,29 @@ namespace App\Http\Controllers\EquipementC;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EquipementRequest;
+use App\Http\Requests\EquipementTranslationsRequest;
+use App\Http\Requests\RecommandationRequest;
 use App\Models\Equipement;
+use App\Services\EquipementAdvisorService;
 use App\Services\EquipementService;
+use App\Services\TranslationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class Equipementc extends Controller
 {
-    public function __construct(private EquipementService $service)
-    {
-    }
+    public function __construct(private EquipementService $service) {}
 
     public function index(): View
-{
-    $equipements = $this->service->getAll();
+    {
+        $equipements = $this->service->getAll();
 
-    return view('Equipement.StoreEquipement', compact('equipements'));
-}
+        return view('Equipement.StoreEquipement', compact('equipements'));
+    }
+
     public function create(): View
     {
         return view('Equipement.CreateEquipement');
@@ -32,6 +37,57 @@ class Equipementc extends Controller
         $equipements = $this->service->getAll();
 
         return view('Equipement.FrontEquipement', compact('equipements'));
+    }
+
+    public function recommander(
+        RecommandationRequest $request,
+        EquipementAdvisorService $advisor
+    ): JsonResponse {
+        $validated = $request->validated();
+
+        return response()->json($advisor->recommend(
+            $validated['besoin'],
+            $validated['lang'] ?? 'fr'
+        ));
+    }
+
+    public function translations(
+        EquipementTranslationsRequest $request,
+        TranslationService $translationService
+    ): JsonResponse {
+        $validated = $request->validated();
+        $target = $validated['lang'];
+        $query = Equipement::query()->orderBy('id');
+
+        if (isset($validated['ids'])) {
+            $query->whereIn('id', $validated['ids']);
+        }
+
+        $equipements = $query->limit(50)->get(['id', 'nom', 'type_equipement']);
+        $uniqueValues = $equipements
+            ->flatMap(fn (Equipement $equipement) => [$equipement->nom, $equipement->type_equipement])
+            ->unique()
+            ->values();
+        $translatedValues = [];
+
+        foreach ($uniqueValues as $value) {
+            $translatedValues[$value] = $target === 'fr'
+                ? $value
+                : ($translationService->translate($value, 'fr', $target) ?? $value);
+        }
+
+        $translations = [];
+
+        foreach (['nom', 'type_equipement'] as $field) {
+            foreach ($equipements as $equipement) {
+                $translations[$equipement->id][$field] = $translatedValues[$equipement->{$field}];
+            }
+        }
+
+        return response()->json([
+            'lang' => $target,
+            'items' => $translations,
+        ]);
     }
 
     public function reservations(Equipement $equipement): View
@@ -90,6 +146,35 @@ class Equipementc extends Controller
             ->with('success', 'Équipement modifié avec succès.');
     }
 
+    public function translate(
+        Request $request,
+        Equipement $equipement,
+        TranslationService $translationService
+    ): JsonResponse {
+        $validated = $request->validate([
+            'lang' => ['sometimes', 'string', 'in:en'],
+        ]);
+        $target = $validated['lang'] ?? 'en';
+
+        $nom = $translationService->translate($equipement->nom, 'fr', $target);
+        $type = $translationService->translate($equipement->type_equipement, 'fr', $target);
+
+        if ($nom === null || $type === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La traduction est temporairement indisponible.',
+            ], 503);
+        }
+
+        return response()->json([
+            'id' => $equipement->id,
+            'lang' => $target,
+            'success' => true,
+            'nom' => $nom,
+            'type_equipement' => $type,
+        ]);
+    }
+
     public function destroy(Equipement $equipement): RedirectResponse
     {
         $image = $equipement->image;
@@ -103,6 +188,7 @@ class Equipementc extends Controller
             ->route('admin.equipements.index')
             ->with('success', 'Équipement supprimé avec succès.');
     }
+<<<<<<< HEAD
         /**
      * Traduction (test unitaire EquipementTranslationTest).
      */
@@ -153,3 +239,6 @@ class Equipementc extends Controller
         return response()->json(['items' => $translated]);
     }
 }
+=======
+}
+>>>>>>> origin/main

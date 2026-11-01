@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+
+rule_files:
+  - alert.rules.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+
+  - job_name: node-exporter
+    static_configs:
+      - targets:
+          - node-exporter:9100
+
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+          - cadvisor:8080
+
+  # Nécessite le plugin Jenkins « Prometheus metrics ».
+  - job_name: jenkins
+    metrics_path: /prometheus
+    static_configs:
+      - targets:
+          - jenkins-laravel:8080
+
+  # À adapter au nom du service Laravel.
+  - job_name: laravel-app
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - app:8000

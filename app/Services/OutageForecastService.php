@@ -84,7 +84,7 @@ class OutageForecastService
 
         // 2) Chaleur prévue sur 3 jours : max 35 pts
         $maxTemp = WeatherForecast::where('neighborhood_id', $neighborhood->id)
-            ->whereBetween('date', [today(), today()->addDays(3)])
+            ->whereBetween('date', [today()->toDateString(), today()->addDays(3)->toDateString()])
             ->max('temp_max');
         $warning = (float) config('services.weather.heat_warning', 35);
         $heat = 0;

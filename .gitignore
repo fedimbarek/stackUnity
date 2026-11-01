@@ -21,6 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+<<<<<<< HEAD
 /storage/reports/*.csv
 
 # ─── SonarQube (contient le token - NE PAS COMMITER) ───
@@ -33,3 +34,6 @@ Nefzi CMD.sh
 coverage.xml
 junit.xml
 coverage-html/
+=======
+monitoring/.env
+>>>>>>> origin/main

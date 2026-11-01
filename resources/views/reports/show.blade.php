@@ -1,10 +1,12 @@
 <x-app-layout>
     <x-slot name="header">{{ $report->title }}</x-slot>
-@include('reports._ai-summary', ['report' => $report])
+
     @if (session('status') === 'report-sent')
         <div class="alert alert-success">Rapport envoyé par email.</div>
     @elseif (session('status') === 'report-send-failed')
         <div class="alert alert-danger">Échec de l'envoi.</div>
+    @elseif (session('status') === 'report-insight-generated')
+        <div class="alert alert-success">Analyse IA générée.</div>
     @endif
 
     <div class="row">
@@ -45,6 +47,8 @@
             </div>
         </div>
     </div>
+
+    @include('reports._ai-summary')
 
     <div class="card shadow mb-4">
         <div class="card-body">

@@ -8,6 +8,7 @@ use App\Http\Requests\NotificationPreferenceRequest;
 use App\Jobs\SendBroadcastJob;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class NotificationApiController extends Controller
 {
@@ -33,6 +34,9 @@ class NotificationApiController extends Controller
     // PUT /api/notifications/{id}/read
     public function read(Request $request, string $id)
     {
+        // Les ids sont des UUID : PostgreSQL lève une erreur SQL (500) sur un id mal formé
+        abort_unless(Str::isUuid($id), 404);
+
         $request->user()->notifications()->where('id', $id)->firstOrFail()->markAsRead();
 
         return response()->json(['message' => 'Notification marquée comme lue.']);
