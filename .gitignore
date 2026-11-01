@@ -22,3 +22,8 @@ yarn-error.log
 /.vscode
 /.zed
 /storage/reports/*.csv
+
+# ─── SonarQube (contient le token - NE PAS COMMITER) ───
+sonar-project.properties
+.sonar/
+coverage.xml
