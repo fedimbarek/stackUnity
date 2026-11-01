@@ -1,9 +1,6 @@
-# Blueprint Render : New + > Blueprint > choisir le dépôt GitHub
-databases:
-  - name: heatalert-db
-    databaseName: heatalert
-    user: heatalert
-    plan: basic-256mb     # payant : évite l'erreur "cannot have more than one active free tier database" et l'expiration à 30 jours
+# Blueprint Render : New + > Blueprint > choisir le dépôt GitHub.
+# Pas de bloc "databases:" : la base PostgreSQL est externe (Neon / Supabase, plan gratuit).
+# Render n'autorise qu'une seule base gratuite par compte, donc on n'en crée pas de nouvelle.
 
 services:
   - type: web
@@ -33,13 +30,11 @@ services:
       # --- Serveur (image serversideup) ---
       - key: PORT
         value: "8080"
-      # --- Base de données : PostgreSQL géré par Render ---
+      # --- Base de données : PostgreSQL externe (Neon / Supabase) ---
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_URL
-        fromDatabase:
-          name: heatalert-db
-          property: connectionString
+        sync: false        # à saisir : postgresql://user:pass@host/db?sslmode=require
       # --- Sessions / cache / queue ---
       - key: SESSION_DRIVER
         value: database
@@ -82,8 +77,6 @@ services:
   #     - key: DB_CONNECTION
   #       value: pgsql
   #     - key: DB_URL
-  #       fromDatabase:
-  #         name: heatalert-db
-  #         property: connectionString
+  #       sync: false
   #     - key: APP_KEY
   #       sync: false
