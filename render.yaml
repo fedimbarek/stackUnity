@@ -3,7 +3,7 @@ databases:
   - name: heatalert-db
     databaseName: heatalert
     user: heatalert
-    plan: free            # ⚠ la base gratuite expire après 30 jours : passer à "basic-256mb" pour garder les données
+    plan: basic-256mb     # payant : évite l'erreur "cannot have more than one active free tier database" et l'expiration à 30 jours
 
 services:
   - type: web
