@@ -1,0 +1,72 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: monitoring-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=4GB
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      # L'image officielle prépare /prometheus avec les droits de son utilisateur non privilégié.
+      - prometheus-data:/prometheus
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: monitoring-node-exporter
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: monitoring-cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      # Si cAdvisor ne démarre pas sous Windows/WSL2, utilisez l'alternative Linux/WSL2 décrite dans le README.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: monitoring-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      # L'image officielle initialise /var/lib/grafana avec les droits de l'utilisateur Grafana.
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  # Données TSDB et règles chargées par Prometheus, indépendantes du nom du projet Compose.
+  prometheus-data:
+    name: prometheus-data
+  # Base de données Grafana, incluant dashboards créés dans l'interface et utilisateurs.
+  grafana-data:
+    name: grafana-data
+
+# Si le réseau externe n'existe pas, le créer une fois avec : docker network create app-network
+networks:
+  app-network:
+    name: app-network
+    external: true

@@ -1,4 +1,3 @@
-
 <?php
 
 namespace Tests\Feature;
@@ -12,35 +11,28 @@ class ProfileTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function createUserWithNeighborhood(): User
-    {
-        // Créer un quartier
-        $neighborhood = Neighborhood::factory()->create();
-
-        // Créer un utilisateur associé au quartier
-        return User::factory()->create([
-            'neighborhood_id' => $neighborhood->id,
-        ]);
-    }
-
     public function test_profile_page_is_displayed(): void
     {
-        $user = $this->createUserWithNeighborhood();
+        $user = User::factory()->create();
 
-        $this->actingAs($user)
-            ->get('/profile')
-            ->assertOk();
+        $response = $this
+            ->actingAs($user)
+            ->get('/profile');
+
+        $response->assertOk();
     }
 
     public function test_profile_information_can_be_updated(): void
     {
-        $user = $this->createUserWithNeighborhood();
+        $neighborhood = Neighborhood::factory()->create();
+        $user = User::factory()->create(['neighborhood_id' => $neighborhood->id]);
 
-        $response = $this->actingAs($user)
+        $response = $this
+            ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
-                'neighborhood_id' => $user->neighborhood_id,
+                'neighborhood_id' => $neighborhood->id,
             ]);
 
         $response
@@ -54,31 +46,32 @@ class ProfileTest extends TestCase
         $this->assertNull($user->email_verified_at);
     }
 
-    public function test_email_verification_status_is_unchanged_when_email_is_unchanged(): void
+    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
-        $user = $this->createUserWithNeighborhood();
+        $neighborhood = Neighborhood::factory()->create();
+        $user = User::factory()->create(['neighborhood_id' => $neighborhood->id]);
 
-        $response = $this->actingAs($user)
+        $response = $this
+            ->actingAs($user)
             ->patch('/profile', [
-                'name' => $user->name,
+                'name' => 'Test User',
                 'email' => $user->email,
-                'neighborhood_id' => $user->neighborhood_id,
+                'neighborhood_id' => $neighborhood->id,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
             ->assertRedirect('/profile');
 
-        $this->assertNotNull(
-            $user->refresh()->email_verified_at
-        );
+        $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
     public function test_user_can_delete_their_account(): void
     {
-        $user = $this->createUserWithNeighborhood();
+        $user = User::factory()->create();
 
-        $response = $this->actingAs($user)
+        $response = $this
+            ->actingAs($user)
             ->delete('/profile', [
                 'password' => 'password',
             ]);
@@ -93,19 +86,17 @@ class ProfileTest extends TestCase
 
     public function test_correct_password_must_be_provided_to_delete_account(): void
     {
-        $user = $this->createUserWithNeighborhood();
+        $user = User::factory()->create();
 
-        $response = $this->actingAs($user)
+        $response = $this
+            ->actingAs($user)
             ->from('/profile')
             ->delete('/profile', [
                 'password' => 'wrong-password',
             ]);
 
         $response
-            ->assertSessionHasErrorsIn(
-                'userDeletion',
-                'password'
-            )
+            ->assertSessionHasErrorsIn('userDeletion', 'password')
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->fresh());
