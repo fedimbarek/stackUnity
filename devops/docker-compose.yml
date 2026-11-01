@@ -8,5 +8,22 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
     restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: heatalert-mysql
+    ports:
+      - "3307:3306"    # ← 3307 côté Windows, 3306 côté conteneur
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: heatalert
+      MYSQL_USER: heatalert
+      MYSQL_PASSWORD: heatalert
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
 volumes:
   jenkins_home:
+  mysql_data:
