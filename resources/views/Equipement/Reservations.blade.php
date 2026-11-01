@@ -94,10 +94,11 @@
                                                         method="POST">
                                                         @csrf
 
-                                                        <button type="submit"
-                                                                class="rounded bg-green-600 px-3 py-2 text-xs text-white">
-                                                            Confirmer
-                                                        </button>
+                                                      <button type="submit"
+        class="rounded px-3 py-2 text-xs font-semibold"
+        style="background-color:#16a34a; color:#ffffff; border:1px solid #15803d; cursor:pointer;">
+    Confirmer
+</button>
                                                     </form>
                                                 @elseif (! $reservation->confirmee_at)
                                                     <span class="text-xs text-gray-500">
@@ -112,10 +113,11 @@
                                                     @csrf
                                                     @method('DELETE')
 
-                                                    <button type="submit"
-                                                            class="rounded bg-red-600 px-3 py-2 text-xs text-white">
-                                                        Supprimer
-                                                    </button>
+                   <button type="submit"
+        class="rounded px-3 py-2 text-xs font-semibold"
+        style="background-color:#dc2626; color:#ffffff; border:1px solid #b91c1c; cursor:pointer;">
+    Supprimer
+</button>
                                                 </form>
                                             </div>
                                         </td>

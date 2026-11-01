@@ -21,9 +21,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/storage/reports/*.csv
-
-# ─── SonarQube (contient le token - NE PAS COMMITER) ───
-sonar-project.properties
-.sonar/
-coverage.xml
+monitoring/.env

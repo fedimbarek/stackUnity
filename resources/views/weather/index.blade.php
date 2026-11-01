@@ -37,6 +37,38 @@
         </div>
     @endif
 
+    {{-- Score de vigilance calculé depuis les prévisions déjà importées. --}}
+    @foreach ($riskScores as $neighborhoodId => $risk)
+        @php
+            $quartier = $forecasts->firstWhere('neighborhood_id', $neighborhoodId)?->neighborhood;
+            $color = match ($risk['level']) {
+                'critique', 'eleve' => 'danger',
+                'modere' => 'warning',
+                default => 'success',
+            };
+        @endphp
+        <div class="card border-left-{{ $color }} shadow mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <strong>Score de vigilance chaleur — {{ $quartier?->name ?? 'Quartier' }}</strong>
+                        <div class="small text-muted">Calcul indicatif sur {{ $risk['days'] }} jour(s), non officiel</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="h4 font-weight-bold">{{ $risk['score'] }}/100</span>
+                        <span class="badge badge-{{ $color }}">{{ $risk['label'] }}</span>
+                    </div>
+                </div>
+                <div class="progress my-2" style="height: 10px;">
+                    <div class="progress-bar bg-{{ $color }}" role="progressbar"
+                         style="width: {{ $risk['score'] }}%;"
+                         aria-valuenow="{{ $risk['score'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="small">{{ $risk['recommendation'] }}</div>
+            </div>
+        </div>
+    @endforeach
+
     @forelse ($forecasts as $f)
         @php
             $border = match ($f->level) {

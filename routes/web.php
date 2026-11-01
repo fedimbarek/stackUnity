@@ -44,15 +44,22 @@ use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\EquipementC\Equipementc;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\TwoFactorController;
-use App\Http\Controllers\NeighborhoodRiskController;
-use App\Http\Controllers\OutageAssistantController;
 
-use App\Http\Controllers\ReportInsightController;
 /*
 |--------------------------------------------------------------------------
 | FRONT OFFICE (public)
 |--------------------------------------------------------------------------
 */
+Route::post('/equipements/recommander', [Equipementc::class, 'recommander'])
+    ->middleware('throttle:10,1')
+    ->name('front.equipements.recommander');
+
+Route::get('/equipements/translations', [Equipementc::class, 'translations'])
+    ->middleware('throttle:20,1')
+    ->name('front.equipements.translations');
+
+Route::get('/equipements/{equipement}/translate', [Equipementc::class, 'translate'])
+    ->name('api.equipements.translate');
 
 Route::get('/', [FrontOfficeController::class, 'home'])
     ->name('front.home');
@@ -509,40 +516,8 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         Route::resource('contact-categories', ContactCategoryController::class)->except('show');
 
     });
-// Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
-    // Route::get('/risk-scores', [NeighborhoodRiskController::class, 'index'])->name('ai.risk');
-// });
-
-// Route::middleware('auth')->group(function () {
-    // Route::get('/assistant', [OutageAssistantController::class, 'index'])->name('ai.assistant');
-    // Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
-        // ->middleware('throttle:10,1')
-        // ->name('ai.assistant.ask');
-// });
 
 
-/*
-|--------------------------------------------------------------------------
-| IA : assistant, risque par quartier, résumé de rapport
-|--------------------------------------------------------------------------
-*/
-
-// Assistant chat (tout utilisateur connecté)
-Route::middleware('auth')->group(function () {
-    Route::get('/assistant', [OutageAssistantController::class, 'index'])->name('ai.assistant');
-    Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
-        ->middleware('throttle:10,1')
-        ->name('ai.assistant.ask');
-});
-
-// Admin + gestionnaire
-Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
-    Route::get('/risk-scores', [NeighborhoodRiskController::class, 'index'])->name('ai.risk');
-
-    Route::post('/reports/{report}/insight', [ReportInsightController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('reports.insight');
-});
 /*
 |--------------------------------------------------------------------------
 | AUTHENTIFICATION
