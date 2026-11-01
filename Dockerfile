@@ -28,7 +28,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-in
 COPY --chown=www-data:www-data . .
 COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
 
-RUN composer dump-autoload --optimize --no-dev --no-interaction \
+RUN composer dump-autoload --optimize --no-dev --no-interaction --no-scripts \
  && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
 
 # Au démarrage : migrate --force, storage:link, config/route/view cache
