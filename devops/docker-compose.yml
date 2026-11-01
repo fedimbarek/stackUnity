@@ -10,17 +10,25 @@ services:
     user: root
 
     ports:
+<<<<<<< HEAD
+      - "8081:8080"        # Jenkins sur localhost:8081
+=======
       - "9090:8080"
+>>>>>>> origin/main
       - "50000:50000"
 
     volumes:
       - jenkins_home:/var/jenkins_home
+<<<<<<< HEAD
+      - /var/run/docker.sock:/var/run/docker.sock   # pour lancer des conteneurs depuis le pipeline
+=======
       - /var/run/docker.sock:/var/run/docker.sock
 
     depends_on:
       mysql:
         condition: service_healthy
 
+>>>>>>> origin/main
     restart: unless-stopped
 
   mysql:
@@ -30,7 +38,10 @@ services:
 
     ports:
       - "3307:3306"
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: heatalert_test
@@ -49,7 +60,45 @@ services:
       retries: 20
 
     restart: unless-stopped
+<<<<<<< HEAD
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    depends_on:
+      - sonarqube-db
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    restart: unless-stopped
+
+  sonarqube-db:
+    image: postgres:15-alpine
+    container_name: sonarqube-db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    restart: unless-stopped
+=======
+>>>>>>> origin/main
 
 volumes:
   jenkins_home:
   mysql_data:
+<<<<<<< HEAD
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  postgresql_data:
+=======
+>>>>>>> origin/main
