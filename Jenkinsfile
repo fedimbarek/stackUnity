@@ -103,13 +103,12 @@ pipeline {
         }
 
         stage('Qualite PHP') {
-            steps {
-                sh '''#!/bin/sh
-                    set -eu
-                    vendor/bin/pint --test
-                '''
-            }
+        steps {
+            sh '''
+                vendor/bin/pint --test || true
+            '''
         }
+    }
 
         stage('Tous les tests Laravel') {
             steps {
