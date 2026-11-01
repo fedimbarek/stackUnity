@@ -1,4 +1,4 @@
-# Blueprint Render : New + > Blueprint > choisir le dépôt GitHub.
+# Blueprint Render : New + > Blueprint > choisir le dépôt GitHub
 databases:
   - name: heatalert-db
     databaseName: heatalert
