@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ $report->title }}</x-slot>
-
+@include('reports._ai-summary', ['report' => $report])
     @if (session('status') === 'report-sent')
         <div class="alert alert-success">Rapport envoyé par email.</div>
     @elseif (session('status') === 'report-send-failed')

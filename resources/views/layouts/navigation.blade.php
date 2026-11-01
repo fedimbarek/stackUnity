@@ -266,7 +266,19 @@
 
     @endrole
 
+<li class="nav-item">
+    <a class="nav-link" href="{{ route('ai.assistant') }}">
+        <i class="fas fa-fw fa-robot"></i><span>Assistant IA</span>
+    </a>
+</li>
 
+@role('admin|gestionnaire')
+<li class="nav-item">
+    <a class="nav-link" href="{{ route('ai.risk') }}">
+        <i class="fas fa-fw fa-chart-line"></i><span>Risque par quartier</span>
+    </a>
+</li>
+@endrole
     {{-- MON COMPTE --}}
     <hr class="sidebar-divider">
 
