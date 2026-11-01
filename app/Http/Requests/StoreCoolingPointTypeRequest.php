@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreCoolingPointTypeRequest extends FormRequest
 {
@@ -13,7 +14,8 @@ class StoreCoolingPointTypeRequest extends FormRequest
         $id = $this->route('cooling_point_type')?->id;
 
         return [
-            'name'        => 'required|string|max:100|unique:cooling_point_types,name,' . $id,
+            // Rule::unique()->ignore(null) n'ajoute aucune clause (l'ancienne chaîne produisait « id <> '' », refusé par PostgreSQL)
+            'name'        => ['required', 'string', 'max:100', Rule::unique('cooling_point_types', 'name')->ignore($id)],
             'icon'        => 'required|string|max:50',
             'color'       => 'required|string|max:20',
             'description' => 'nullable|string|max:500',

@@ -1,0 +1,89 @@
+# Blueprint Render : New + > Blueprint > choisir le dépôt GitHub.
+databases:
+  - name: heatalert-db
+    databaseName: heatalert
+    user: heatalert
+    plan: free            # ⚠ la base gratuite expire après 30 jours : passer à "basic-256mb" pour garder les données
+
+services:
+  - type: web
+    name: heatalert
+    runtime: docker
+    plan: free            # ⚠ s'endort après 15 min d'inactivité ; "starter" (7 $/mois) pour rester éveillé
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    envVars:
+      # --- Application ---
+      - key: APP_NAME
+        value: HeatAlert
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false        # à saisir : php artisan key:generate --show
+      - key: APP_URL
+        sync: false        # à saisir : https://heatalert.onrender.com (l'URL donnée par Render)
+      - key: APP_LOCALE
+        value: fr
+      - key: APP_FALLBACK_LOCALE
+        value: fr
+      - key: LOG_CHANNEL
+        value: stderr
+      # --- Serveur (image serversideup) ---
+      - key: PORT
+        value: "8080"
+      # --- Base de données : PostgreSQL géré par Render ---
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: heatalert-db
+          property: connectionString
+      # --- Sessions / cache / queue ---
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: FILESYSTEM_DISK
+        value: local
+      # --- Services externes ---
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: sandbox.smtp.mailtrap.io
+      - key: MAIL_PORT
+        value: "2525"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        value: no-reply@heatalert.tn
+      # --- Premier déploiement : mettre "true", puis repasser à "false" ---
+      - key: SEED_ON_BOOT
+        value: "true"
+
+  # Scheduler Laravel (app:close-stale-outages toutes les 30 min).
+  # Les Cron Jobs Render sont facturés à la minute : décommenter si besoin.
+  # - type: cron
+  #   name: heatalert-scheduler
+  #   runtime: docker
+  #   dockerfilePath: ./Dockerfile
+  #   schedule: "*/30 * * * *"
+  #   dockerCommand: php artisan app:close-stale-outages
+  #   envVars:  # mêmes variables DB_* / APP_KEY que le service web
+  #     - key: DB_CONNECTION
+  #       value: pgsql
+  #     - key: DB_URL
+  #       fromDatabase:
+  #         name: heatalert-db
+  #         property: connectionString
+  #     - key: APP_KEY
+  #       sync: false
