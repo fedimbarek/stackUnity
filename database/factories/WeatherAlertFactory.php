@@ -13,7 +13,8 @@ class WeatherAlertFactory extends Factory
         return [
             'neighborhood_id' => Neighborhood::query()->inRandomOrder()->value('id'),
             'weather_forecast_id' => null,
-            'created_by' => User::role('admin')->value('id'),
+            // whereHas (et non User::role) : ne plante pas si le rôle « admin » n'existe pas encore
+            'created_by' => User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->value('id'),
             'level' => fake()->randomElement(['warning', 'canicule']),
             'source' => 'manual',
             'message' => fake()->randomElement([

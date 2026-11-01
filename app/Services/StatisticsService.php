@@ -26,7 +26,7 @@ class StatisticsService
 
             $avgDurationMinutes = (clone $query)
                 ->whereNotNull('resolved_at')
-                ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, started_at, resolved_at)) as avg_minutes'))
+                ->select(DB::raw($this->avgMinutesExpression().' as avg_minutes'))
                 ->value('avg_minutes');
 
             return [
@@ -37,6 +37,19 @@ class StatisticsService
                 'avg_resolution_minutes' => $avgDurationMinutes ? round($avgDurationMinutes) : null,
             ];
         });
+    }
+
+    /**
+     * Durée moyenne en minutes, selon le SGBD (MySQL en prod, SQLite dans les tests).
+     * TIMESTAMPDIFF n'existe pas en SQLite.
+     */
+    private function avgMinutesExpression(): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => 'AVG((julianday(resolved_at) - julianday(started_at)) * 1440)',
+            'pgsql' => 'AVG(EXTRACT(EPOCH FROM (resolved_at - started_at)) / 60)',
+            default => 'AVG(TIMESTAMPDIFF(MINUTE, started_at, resolved_at))',
+        };
     }
 
     /** Variation en % par rapport à la période précédente de même durée. */

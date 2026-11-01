@@ -31,9 +31,12 @@ use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\FrontOfficeController;
 use App\Http\Controllers\NeighborhoodController;
+use App\Http\Controllers\NeighborhoodRiskController;
+use App\Http\Controllers\OutageAssistantController;
 use App\Http\Controllers\OutageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportInsightController;
 use App\Http\Controllers\CoolingPointController;
 use App\Http\Controllers\EmergencyContactController;
 use App\Http\Controllers\WeatherController;
@@ -184,6 +187,10 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
     Route::post('/reports/{report}/send', [ReportController::class, 'send'])
         ->name('reports.send');
+
+    // Résumé IA (Gemini, avec repli sans clé API)
+    Route::post('/reports/{report}/insight', [ReportInsightController::class, 'store'])
+        ->name('reports.insight');
 
     Route::resource('reports', ReportController::class);
 
@@ -365,6 +372,36 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
             ->name('equipements.reservations.destroy');
 
     });
+
+
+/*
+|--------------------------------------------------------------------------
+| IA : assistant coupures + classement des quartiers à risque
+|--------------------------------------------------------------------------
+*/
+
+// Assistant : tous les utilisateurs connectés (10 questions / minute)
+Route::middleware('auth')
+    ->prefix('ai')
+    ->name('ai.')
+    ->group(function () {
+
+        Route::get('/assistant', [OutageAssistantController::class, 'index'])
+            ->name('assistant');
+
+        Route::post('/assistant/ask', [OutageAssistantController::class, 'ask'])
+            ->middleware('throttle:10,1')
+            ->name('assistant.ask');
+
+    });
+
+// Classement des quartiers à risque : admin + gestionnaire
+Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
+
+    Route::get('/ai/risque', [NeighborhoodRiskController::class, 'index'])
+        ->name('ai.risk');
+
+});
 
 
 /*
