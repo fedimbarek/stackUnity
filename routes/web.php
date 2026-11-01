@@ -69,6 +69,10 @@ Route::get('/Equipements', [Equipementc::class, 'frontIndex'])
 
 Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
     ->name('front.equipements.reservations.store');
+Route::post('/equipements/recommander', [Equipementc::class, 'recommander'])
+    ->name('front.equipements.recommander');
+Route::match(['get', 'post'], '/equipements/translations', [Equipementc::class, 'translations'])
+    ->name('front.equipements.translations');
 
 /*
 |--------------------------------------------------------------------------

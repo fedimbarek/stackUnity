@@ -103,4 +103,53 @@ class Equipementc extends Controller
             ->route('admin.equipements.index')
             ->with('success', 'Équipement supprimé avec succès.');
     }
+        /**
+     * Traduction (test unitaire EquipementTranslationTest).
+     */
+    public function translate(string $text, string $targetLang = 'en'): ?string
+    {
+        return app(\App\Services\TranslationService::class)
+            ->translate($text, 'fr', $targetLang);
+    }
+
+    /**
+     * Recommandation IA (test EquipementRecommandationTest).
+     * Champ attendu : "besoin" (attention, pas "need").
+     */
+    public function recommander(\Illuminate\Http\Request $request)
+    {
+        $validated = $request->validate([
+            'besoin' => 'required|string|min:3|max:500',
+            'lang'   => 'nullable|string|in:fr,en,ar',
+        ]);
+
+        $result = app(\App\Services\EquipementAdvisorService::class)
+            ->recommend(
+                $validated['besoin'],
+                $validated['lang'] ?? 'fr'
+            );
+
+        return response()->json($result);
+    }
+
+    /**
+     * Traductions batch (test EquipementTranslationsTest).
+     */
+    public function translations(\Illuminate\Http\Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'lang'  => 'required|string|in:fr,en,ar',
+        ]);
+
+        $service = app(\App\Services\TranslationService::class);
+        $lang = $validated['lang'];
+
+        $translated = collect($validated['items'])->map(fn ($item) => [
+            'name' => $service->translate($item['name'] ?? '', 'fr', $lang) ?? ($item['name'] ?? ''),
+            'type' => $service->translate($item['type'] ?? '', 'fr', $lang) ?? ($item['type'] ?? ''),
+        ]);
+
+        return response()->json(['items' => $translated]);
+    }
 }

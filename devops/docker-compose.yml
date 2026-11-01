@@ -3,17 +3,18 @@ services:
     build: .
     container_name: jenkins-laravel
     ports:
-      - "8080:8080"
+      - "8081:8080"        # Jenkins sur localhost:8081
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock   # pour lancer des conteneurs depuis le pipeline
     restart: unless-stopped
 
   mysql:
     image: mysql:8.0
     container_name: heatalert-mysql
     ports:
-      - "3307:3306"    # ← 3307 côté Windows, 3306 côté conteneur
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: heatalert
@@ -22,8 +23,39 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    depends_on:
+      - sonarqube-db
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    restart: unless-stopped
+
+  sonarqube-db:
+    image: postgres:15-alpine
+    container_name: sonarqube-db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
 volumes:
   jenkins_home:
   mysql_data:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  postgresql_data:
