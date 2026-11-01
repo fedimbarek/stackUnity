@@ -1,0 +1,16 @@
+# --- Identité du projet (doit correspondre à ce que tu as créé dans SonarQube) ---
+sonar.projectKey=heatalert
+sonar.projectName=HeatAlert
+sonar.projectVersion=1.0
+
+# --- Sources à analyser ---
+sonar.sources=app, routes, database, resources/views
+
+# --- Dossiers à exclure (générés, dépendances, tests) ---
+sonar.exclusions=vendor/**, node_modules/**, storage/**, public/build/**, tests/**
+
+# --- Connexion au serveur SonarQube local ---
+sonar.host.url=http://host.docker.internal:9000
+
+# --- Authentification (⚠️ ne pas commiter ce token sur Git) ---
+sonar.login=sqp_5a72b4232c861a54f6411c65a8b7426402e248c8

@@ -11,17 +11,18 @@ use App\Models\User;
 
 class OutageAggregationService
 {
-    private const CONFIRM_THRESHOLD = 3.0;          // somme des poids de confiance nécessaire
-    private const CONFIRM_WINDOW_MINUTES = 15;
-    private const DEDUPE_WINDOW_MINUTES = 60;
-    private const NEARBY_RADIUS_METERS = 500;
-    private const AUTO_CLOSE_AFTER_HOURS = 3;
-    private const AUTO_CLOSE_SILENCE_MINUTES = 120;
+    private const CONFIRM_THRESHOLD = 3.0;         // somme des poids de confiance nécessaire
+    private const CONFIRM_WINDOW_MINUTES = 15;      // ...dans cette fenêtre de temps
+    private const DEDUPE_WINDOW_MINUTES = 60;       // rattacher à une coupure existante si < 60min
+    private const NEARBY_RADIUS_METERS = 500;       // ...et à moins de 500m
+    private const AUTO_CLOSE_AFTER_HOURS = 3;       // âge minimum avant clôture auto
+    private const AUTO_CLOSE_SILENCE_MINUTES = 120; // ...si aucun signalement depuis 2h
 
     public function __construct(
         private ReporterTrustService $trust,
         private OutageForecastService $forecast,
-    ) {}
+    ) {
+    }
 
     public function report(User $user, Neighborhood $neighborhood, ?float $latitude, ?float $longitude): PowerOutage
     {
@@ -36,23 +37,24 @@ class OutageAggregationService
                 'source' => 'user',
                 'started_at' => now(),
             ]);
+
+            // ETA automatique (une ETA saisie ensuite par un gestionnaire n'est jamais écrasée)
+            $outage->update([
+                'estimated_end_time' => $this->forecast->predictDuration($outage)['eta'],
+            ]);
         }
 
-        $evaluation = $this->trust->evaluate($user, $neighborhood, $latitude, $longitude);
+        // Anti-abus : le poids est calculé AVANT d'enregistrer le signalement (compteur 24 h)
+        $trust = $this->trust->evaluate($user, $neighborhood, $latitude, $longitude);
 
         OutageReport::create([
             'power_outage_id' => $outage->id,
             'user_id' => $user->id,
             'latitude' => $latitude,
             'longitude' => $longitude,
-            'trust_weight' => $evaluation['weight'],
-            'trust_flags' => $evaluation['flags'],
+            'trust_weight' => $trust['weight'],
+            'trust_flags' => $trust['flags'],
         ]);
-
-        // ETA automatique (si un gestionnaire ne l'a pas déjà saisie)
-        if (! $outage->estimated_end_time) {
-            $outage->update(['estimated_end_time' => $this->forecast->predictDuration($outage)['eta']]);
-        }
 
         $this->maybeConfirm($outage);
 
@@ -79,6 +81,7 @@ class OutageAggregationService
         return $outage;
     }
 
+    /** Appelée par la commande planifiée (routes/console.php). */
     public function closeStaleOutages(): int
     {
         $stale = PowerOutage::whereIn('status', ['reported', 'confirmed'])
@@ -129,14 +132,15 @@ class OutageAggregationService
             return;
         }
 
-        // Chaque utilisateur compte une seule fois (son meilleur poids)
+        // Un même utilisateur ne compte qu'une fois : on garde son meilleur poids
         $score = OutageReport::where('power_outage_id', $outage->id)
             ->where('created_at', '>=', now()->subMinutes(self::CONFIRM_WINDOW_MINUTES))
-            ->get(['user_id', 'trust_weight'])
+            ->selectRaw('user_id, MAX(trust_weight) as weight')
             ->groupBy('user_id')
-            ->sum(fn ($rows) => (float) $rows->max('trust_weight'));
+            ->get()
+            ->sum('weight');
 
-        if ($score >= self::CONFIRM_THRESHOLD) {
+        if (round($score, 2) >= self::CONFIRM_THRESHOLD) {
             $this->confirm($outage);
         }
     }
@@ -144,8 +148,10 @@ class OutageAggregationService
     private function distanceInMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
         $earthRadius = 6371000;
+
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
+
         $a = sin($dLat / 2) ** 2
             + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
 

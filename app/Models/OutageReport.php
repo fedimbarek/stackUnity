@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class OutageReport extends Model
 {
-    protected $fillable = ['power_outage_id', 'user_id', 'latitude', 'longitude', 'trust_weight', 'trust_flags'];
+    protected $fillable = [
+        'power_outage_id', 'user_id', 'latitude', 'longitude',
+        'trust_weight', 'trust_flags',
+    ];
 
     protected function casts(): array
     {
