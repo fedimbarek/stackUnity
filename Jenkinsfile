@@ -29,7 +29,8 @@ pipeline {
         MAIL_MAILER = 'array'
         XDEBUG_MODE = 'coverage'
         COMPOSER_NO_INTERACTION = '1'
-        DOCKER_IMAGE = 'meddhia1rom/stackunity'
+        //DOCKER_IMAGE = 'meddhia1rom/stackunity'
+        DOCKER_IMAGE = 'fedimbarek/stackunity'
     }
 
     stages {

@@ -29,6 +29,20 @@
                 <button class="btn btn-heat btn-lg"><i class="bi bi-search"></i> Chercher</button>
             </div>
         </form>
+
+        {{-- MÉTIER AVANCÉ : tous les contacts + PDF --}}
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a href="{{ route('contacts.all') }}" class="btn btn-navy btn-lg rounded-pill"
+               style="background: var(--heat-navy); color: #fff;">
+                <i class="bi bi-list-ul"></i> Afficher tous les contacts
+            </a>
+            <a href="{{ route('contacts.pdf') }}" class="btn btn-outline-danger btn-lg rounded-pill">
+                <i class="bi bi-file-earmark-pdf"></i> Télécharger en PDF
+            </a>
+            <a href="#assistant" class="btn btn-outline-secondary btn-lg rounded-pill">
+                <i class="bi bi-stars"></i> Assistant IA
+            </a>
+        </div>
     </div>
 </section>
 
@@ -52,6 +66,9 @@
             @endforeach
         </div>
     @endif
+
+    {{-- ASSISTANT IA --}}
+    @include('contacts.partials.assistant')
 
     {{-- PILLS CATÉGORIES --}}
     <div class="d-flex flex-wrap gap-2 mb-4">
