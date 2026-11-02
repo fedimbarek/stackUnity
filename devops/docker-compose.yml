@@ -1,56 +1,42 @@
+# Jenkins + MySQL (CI) + SonarQube (+ Postgres)
+# Ports hote : Jenkins 8082 | SonarQube 9000 | MySQL 3307
+# (Prometheus 9090, Grafana 3000, cAdvisor 8081 -> monitoring/docker-compose.monitoring.yml)
+#
+# Reseau externe a creer UNE fois :  docker network create app-network
 
 services:
   jenkins:
     build:
       context: .
       dockerfile: Dockerfile.jenkins
-      
     container_name: jenkins-laravel
-
     user: root
-
     ports:
-<<<<<<< HEAD
-      - "8081:8080"        # Jenkins sur localhost:8081
-=======
-      - "9090:8080"
->>>>>>> origin/main
+      - "8082:8080"
       - "50000:50000"
-
     volumes:
       - jenkins_home:/var/jenkins_home
-<<<<<<< HEAD
-      - /var/run/docker.sock:/var/run/docker.sock   # pour lancer des conteneurs depuis le pipeline
-=======
-      - /var/run/docker.sock:/var/run/docker.sock
-
+      - /var/run/docker.sock:/var/run/docker.sock   # lancer docker depuis le pipeline
     depends_on:
       mysql:
         condition: service_healthy
-
->>>>>>> origin/main
+    networks:
+      - default
+      - app-network        # pour que Prometheus voie jenkins-laravel:8080
     restart: unless-stopped
 
   mysql:
     image: mysql:8.0
-
     container_name: heatalert-mysql
-
     ports:
       - "3307:3306"
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: heatalert_test
       MYSQL_USER: heatalert_ci
       MYSQL_PASSWORD: ci-local-only-change-me
-
     volumes:
       - mysql_data:/var/lib/mysql
-
     healthcheck:
       test:
         - CMD-SHELL
@@ -58,9 +44,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-
     restart: unless-stopped
-<<<<<<< HEAD
 
   sonarqube:
     image: sonarqube:community
@@ -89,16 +73,16 @@ services:
     volumes:
       - postgresql_data:/var/lib/postgresql/data
     restart: unless-stopped
-=======
->>>>>>> origin/main
 
 volumes:
   jenkins_home:
   mysql_data:
-<<<<<<< HEAD
   sonarqube_data:
   sonarqube_logs:
   sonarqube_extensions:
   postgresql_data:
-=======
->>>>>>> origin/main
+
+networks:
+  app-network:
+    name: app-network
+    external: true

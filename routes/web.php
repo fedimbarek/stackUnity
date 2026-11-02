@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -21,7 +22,7 @@ use App\Http\Controllers\Admin\CoolingPointTypeController;
 use App\Http\Controllers\Admin\ContactCategoryController;
 use App\Http\Controllers\Admin\EmergencyContactController as AdminContactController;
 
-// API JSON (vérifie les namespaces, voir les explications après le fichier)
+// API JSON
 use App\Http\Controllers\Api\WeatherApiController;
 use App\Http\Controllers\Api\AlertApiController;
 use App\Http\Controllers\Api\NotificationApiController;
@@ -48,11 +49,13 @@ use App\Http\Controllers\EquipementC\Equipementc;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\TwoFactorController;
 
+
 /*
 |--------------------------------------------------------------------------
 | FRONT OFFICE (public)
 |--------------------------------------------------------------------------
 */
+
 Route::post('/equipements/recommander', [Equipementc::class, 'recommander'])
     ->middleware('throttle:10,1')
     ->name('front.equipements.recommander');
@@ -73,16 +76,15 @@ Route::get('/carte', [FrontOfficeController::class, 'map'])
 Route::get('/carte/data', [OutageController::class, 'map'])
     ->name('front.map.data');
 
-
 Route::get('/Equipements', [Equipementc::class, 'frontIndex'])
     ->name('front.equipements');
 
 Route::post('/equipements/{equipement}/reservations', [ReservationController::class, 'store'])
     ->name('front.equipements.reservations.store');
-Route::post('/equipements/recommander', [Equipementc::class, 'recommander'])
-    ->name('front.equipements.recommander');
+
 Route::match(['get', 'post'], '/equipements/translations', [Equipementc::class, 'translations'])
     ->name('front.equipements.translations');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -133,7 +135,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/outages', [OutageController::class, 'store'])
         ->name('outages.store');
 
-    // Carte (doit rester AVANT /outages/{outage})
+    // Carte
     Route::get('/outages/map', [OutageController::class, 'map'])
         ->name('outages.map');
 
@@ -157,7 +159,7 @@ Route::middleware('auth')->group(function () {
 
     });
 
-    // Détails (en dernier : /outages/{outage} capture tout le reste)
+    // Détails
     Route::get('/outages/{outage}', [OutageController::class, 'show'])
         ->name('outages.show');
 
@@ -185,14 +187,12 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
 Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
-    // Avant le resource, pour ne pas être masquées par reports/{report}
     Route::get('/reports/{report}/download', [ReportController::class, 'download'])
         ->name('reports.download');
 
     Route::post('/reports/{report}/send', [ReportController::class, 'send'])
         ->name('reports.send');
 
-    // Résumé IA (Gemini, avec repli sans clé API)
     Route::post('/reports/{report}/insight', [ReportInsightController::class, 'store'])
         ->name('reports.insight');
 
@@ -228,7 +228,6 @@ Route::middleware(['auth', 'role:admin'])
             ->name('audit-logs.index');
 
         // CRUD admin des points de fraîcheur
-        // (URLs : /admin/cooling-points, /admin/cooling-point-types)
         Route::resource('cooling-point-types', CoolingPointTypeController::class);
         Route::resource('cooling-points', AdminCoolingPointController::class);
 
@@ -264,11 +263,9 @@ Route::middleware(['auth', 'role:admin'])
 // Tous les utilisateurs connectés
 Route::middleware('auth')->group(function () {
 
-    // Page des prévisions
     Route::get('/weather', [WeatherController::class, 'index'])
         ->name('weather.index');
 
-    // Bouton « Conseils IA » (formulaire POST)
     Route::post('/weather/advice', [WeatherController::class, 'advice'])
         ->name('weather.advice');
 
@@ -277,7 +274,6 @@ Route::middleware('auth')->group(function () {
 // Admin + gestionnaire
 Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
-    // Bouton « Actualiser la météo » (formulaire POST)
     Route::post('/weather/refresh', [WeatherController::class, 'refresh'])
         ->name('weather.refresh');
 
@@ -318,7 +314,7 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         // Risques de coupure
         Route::resource('risks', OutageRiskController::class);
 
-        // Alertes météo (index, create, store, show, edit, update, destroy)
+        // Alertes météo
         Route::resource('alerts', WeatherAlertController::class);
 
         // Seuils d'alerte : admin uniquement
@@ -364,14 +360,16 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
         Route::delete('/equipements/{equipement}', [Equipementc::class, 'destroy'])
             ->name('equipements.destroy');
 
-        // Gestion des réservations d'un équipement
+        // Gestion des réservations
         Route::get('/equipements/{equipement}/reservations', [Equipementc::class, 'reservations'])
             ->name('equipements.reservations.index');
 
-        // Route::patch('/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
-            // ->name('equipements.reservations.confirm');
-        Route::match(['post', 'patch'], '/equipements/{equipement}/reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])
-            ->name('equipements.reservations.confirm');
+        Route::match(
+            ['post', 'patch'],
+            '/equipements/{equipement}/reservations/{reservation}/confirm',
+            [ReservationController::class, 'confirm']
+        )->name('equipements.reservations.confirm');
+
         Route::delete('/equipements/{equipement}/reservations/{reservation}', [ReservationController::class, 'destroy'])
             ->name('equipements.reservations.destroy');
 
@@ -384,7 +382,7 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])
 |--------------------------------------------------------------------------
 */
 
-// Assistant : tous les utilisateurs connectés (10 questions / minute)
+// Assistant : tous les utilisateurs connectés
 Route::middleware('auth')
     ->prefix('ai')
     ->name('ai.')
@@ -399,7 +397,7 @@ Route::middleware('auth')
 
     });
 
-// Classement des quartiers à risque : admin + gestionnaire
+// Classement des quartiers à risque
 Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
     Route::get('/ai/risque', [NeighborhoodRiskController::class, 'index'])
@@ -410,7 +408,7 @@ Route::middleware(['auth', 'role:admin|gestionnaire'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| AUTHENTIFICATION À DEUX FACTEURS (utilisateur connecté)
+| AUTHENTIFICATION À DEUX FACTEURS
 |--------------------------------------------------------------------------
 */
 
@@ -418,11 +416,13 @@ Route::middleware('auth')
     ->prefix('two-factor')
     ->name('two-factor.')
     ->group(function () {
+
         Route::get('/', [TwoFactorController::class, 'show'])->name('show');
         Route::post('/enable', [TwoFactorController::class, 'enable'])->name('enable');
         Route::post('/confirm', [TwoFactorController::class, 'confirm'])->name('confirm');
         Route::post('/recovery-codes', [TwoFactorController::class, 'regenerate'])->name('recovery');
         Route::delete('/', [TwoFactorController::class, 'disable'])->name('disable');
+
     });
 
 
@@ -434,19 +434,15 @@ Route::middleware('auth')
 
 Route::middleware('auth')->group(function () {
 
-    // Liste des notifications
     Route::get('/notifications', [UserNotificationController::class, 'index'])
         ->name('notifications.index');
 
-    // Bouton « Tout marquer comme lu »
     Route::put('/notifications/read-all', [UserNotificationController::class, 'readAll'])
         ->name('notifications.readAll');
 
-    // Marquer UNE notification comme lue
     Route::match(['put', 'patch', 'post'], '/notifications/{id}/read', [UserNotificationController::class, 'read'])
         ->name('notifications.read');
 
-    // Préférences
     Route::get('/notifications/preferences', [NotificationPreferenceController::class, 'edit'])
         ->name('notifications.preferences.edit');
 
@@ -506,7 +502,7 @@ Route::middleware([ForceJsonResponse::class, 'auth'])
 
 /*
 |--------------------------------------------------------------------------
-| API INTERNE : coupures (future application mobile)
+| API INTERNE : coupures
 |--------------------------------------------------------------------------
 */
 
@@ -539,24 +535,64 @@ Route::middleware('auth')
 |--------------------------------------------------------------------------
 */
 
-// Public
-Route::get('/contacts', [EmergencyContactController::class, 'index'])
-    ->name('contacts.index');
+// =========================
+// BACK OFFICE (admin + gestionnaire)
+// =========================
 
-Route::get('/contacts/{contact}', [EmergencyContactController::class, 'show'])
-    ->whereNumber('contact')
-    ->name('contacts.show');
-
-// Back office (admin + gestionnaire)
 Route::middleware(['auth', 'role:admin|gestionnaire'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
 
-        Route::resource('contacts', AdminContactController::class)->except('show');
-        Route::resource('contact-categories', ContactCategoryController::class)->except('show');
+        // PDF - Back Office
+        Route::get('/contacts/pdf', [AdminContactController::class, 'pdf'])
+            ->name('contacts.pdf');
+
+        // Page Assistant IA - Back Office
+        Route::get('/contacts/assistant', [AdminContactController::class, 'assistant'])
+            ->name('contacts.assistant');
+
+        // Traitement Assistant IA
+        Route::post('/contacts/assistant', [EmergencyContactController::class, 'assistant'])
+            ->middleware('throttle:10,1')
+            ->name('contacts.assistant.ask');
+
+        // CRUD contacts
+        Route::resource('contacts', AdminContactController::class)
+            ->except('show');
+
+        // CRUD catégories
+        Route::resource('contact-categories', ContactCategoryController::class)
+            ->except('show');
 
     });
+
+
+// =========================
+// FRONT OFFICE (public)
+// =========================
+
+// Liste des contacts
+Route::get('/contacts', [EmergencyContactController::class, 'index'])
+    ->name('contacts.index');
+
+// Tous les contacts
+Route::get('/contacts/all', [EmergencyContactController::class, 'all'])
+    ->name('contacts.all');
+
+// PDF public
+Route::get('/contacts/pdf', [EmergencyContactController::class, 'pdf'])
+    ->name('contacts.pdf');
+
+// Assistant IA public
+Route::post('/contacts/assistant', [EmergencyContactController::class, 'assistant'])
+    ->middleware('throttle:10,1')
+    ->name('contacts.assistant');
+
+// Détails d'un contact
+Route::get('/contacts/{contact}', [EmergencyContactController::class, 'show'])
+    ->whereNumber('contact')
+    ->name('contacts.show');
 
 
 /*
